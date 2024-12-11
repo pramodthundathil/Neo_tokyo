@@ -14,6 +14,17 @@ from rest_framework.response import Response
 from rest_framework import status
 from .serializers import CustomUserSerializer
 from .models import CustomUser
+from rest_framework.exceptions import PermissionDenied
+from rest_framework_simplejwt.authentication import JWTAuthentication
+
+from django.shortcuts import get_object_or_404
+from django.core.cache import cache
+from rest_framework_simplejwt.tokens import RefreshToken
+import random
+from django.conf import settings
+from django.core.mail import send_mail,EmailMessage
+from django.template.loader import render_to_string
+from django.contrib.sites.shortcuts import get_current_site
 
 # Create your views here.
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
@@ -21,25 +32,98 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
     def get_token(cls, user):
         token = super().get_token(user)
         token['email'] = user.email
-        token['id'] = user.id
+        token['id'] = user.id  # This should match 'id'
         token['first_name'] = user.first_name
         return token
+
     
 class MyTokenObtainPairView(TokenObtainPairView):
     serializer_class = MyTokenObtainPairSerializer
 
 
 
-from django.shortcuts import get_object_or_404
-from django.core.cache import cache
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated, AllowAny
-from rest_framework_simplejwt.tokens import RefreshToken
+
+
+
+# google login 
+
+from django.shortcuts import redirect
+from social_django.utils import psa
+
+@csrf_exempt
+@psa('social:complete')
+def google_login(request):
+    google_auth_url = request.backend.auth_url()
+    return redirect(google_auth_url)
+
+# google registration 
+
+
+#google login 
+
+from django.dispatch import receiver
+# from social_django.signals import social_auth_registered
+from django.contrib.auth.models import User
+
+def create_user(backend, user, response, *args, **kwargs):
+    """
+    Custom user creation pipeline.
+    Called if the user does not exist during authentication.
+    """
+    if not user:
+        user_data = {
+            'email': response.get('email'),
+            'first_name': response.get('given_name'),
+            'last_name': response.get('family_name'),
+        }
+        return {
+            'is_new': True,
+            'user': User.objects.create_user(**user_data)
+        }
+
+
 from rest_framework.response import Response
-from rest_framework import status
-from .serializers import CustomUserSerializer
-from .models import CustomUser
-import random
+from rest_framework.decorators import api_view, permission_classes
+from social_django.utils import load_strategy
+from social_django.models import UserSocialAuth
+from rest_framework_simplejwt.tokens import RefreshToken
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
+
+@api_view(['GET'])
+def google_callback(request):
+    strategy = load_strategy(request)
+    auth_backend = 'google-oauth2'
+
+    # Extract the authorization code from the query parameters
+    code = request.GET.get('code')
+    if not code:
+        return Response({'error': 'Authorization code not provided.'}, status=400)
+
+    # Exchange code for token
+    try:
+        backend = strategy.get_backend(auth_backend)
+        user = backend.do_auth(code)
+
+        if not user:
+            return Response({'error': 'Authentication failed.'}, status=400)
+
+        # Generate JWT token
+        refresh = RefreshToken.for_user(user)
+        return Response({
+            'refresh': str(refresh),
+            'access': str(refresh.access_token),
+            'user': {
+                'id': user.id,
+                'email': user.email,
+                'first_name': user.first_name,
+                'last_name': user.last_name,
+            }
+        })
+    except Exception as e:
+        return Response({'error': str(e)}, status=400)
+
 
 
 # OTP Generation
@@ -52,7 +136,13 @@ def generate_otp(request):
             {'error': 'Email or phone number is required.'},
             status=status.HTTP_400_BAD_REQUEST
         )
-
+    try:
+        user = CustomUser.objects.get(email=identifier) if '@' in identifier else CustomUser.objects.get(phone_number=identifier)
+    except CustomUser.DoesNotExist:
+        return Response(
+            {'error': 'User does not exist.'},
+            status=status.HTTP_404_NOT_FOUND
+        )
     # Generate a 6-digit OTP
     otp = random.randint(100000, 999999)
 
@@ -61,6 +151,18 @@ def generate_otp(request):
 
     # Simulate sending OTP (replace with email/SMS service)
     print(f"OTP for {identifier}: {otp}")
+    email = user.email
+    current_site = get_current_site(request)
+    mail_subject = 'OTP for Account LOGIN -  NEO TOKYO'
+    path = "SignUp"
+    message = render_to_string('emailbody_otp.html', {'user': user,
+                                                        'domain': current_site.domain,
+                                                        'path':path,
+                                                        'token':otp,})
+
+    email = EmailMessage(mail_subject, message, to=[email])
+    email.content_subtype = "html"
+    email.send(fail_silently=True)
 
     return Response(
         {'message': 'OTP sent successfully.'},
@@ -124,6 +226,22 @@ def verify_otp_and_login(request):
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def user_registration(request):
+    # Check if email or phone number exists
+    email = request.data.get('email')
+    phone_number = request.data.get('phone_number')
+
+    if CustomUser.objects.filter(email=email).exists():
+        return Response(
+            {"detail": "A user with this email already exists."},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    if CustomUser.objects.filter(phone_number=phone_number).exists():
+        return Response(
+            {"detail": "A user with this phone number already exists."},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    # Proceed with serializer validation and saving
     serializer = CustomUserSerializer(data=request.data)
     if serializer.is_valid():
         serializer.save()
@@ -135,17 +253,35 @@ def user_registration(request):
 
 
 
-
-
 # Get User Data by ID
+
+from rest_framework.exceptions import AuthenticationFailed, PermissionDenied
+
+import logging
+
+logger = logging.getLogger(__name__)
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_user_data(request, pk):
-    user = get_object_or_404(CustomUser, id=pk)
-    serializer = CustomUserSerializer(user)
-    return Response(serializer.data)
-
-
+    try:
+        # Ensure the authenticated user can only access their own data
+        if request.user.id != int(pk):
+            return Response(
+                {"detail": "You do not have permission to access this user's data."}, 
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        # Fetch and return the user data
+        user = get_object_or_404(CustomUser, id=pk)
+        serializer = CustomUserSerializer(user)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+    except Exception as e:
+        return Response(
+            {"detail": str(e)}, 
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
 
 @permission_classes([IsAuthenticated])
 @csrf_exempt

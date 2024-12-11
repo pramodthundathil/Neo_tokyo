@@ -3,8 +3,8 @@
 
 <head>
 	<meta http-equiv="content-type" content="text/html; charset=utf-8">
-	<title>Page not found at /authentication/demodata/</title>
 	<meta name="robots" content="NONE,NOARCHIVE">
+	<title>403 Forbidden</title>
 	<style>
 		html * {
 			padding: 0;
@@ -25,7 +25,7 @@
 			color: #000;
 		}
 
-		body> :where(header, main, footer) {
+		body>div {
 			border-bottom: 1px solid #ddd;
 		}
 
@@ -34,41 +34,23 @@
 			margin-bottom: .4em;
 		}
 
-		h1 small {
+		h1 span {
 			font-size: 60%;
 			color: #666;
 			font-weight: normal;
-		}
-
-		table {
-			border: none;
-			border-collapse: collapse;
-			width: 100%;
-		}
-
-		td,
-		th {
-			vertical-align: top;
-			padding: 2px 3px;
-		}
-
-		th {
-			width: 12em;
-			text-align: right;
-			color: #666;
-			padding-right: .5em;
 		}
 
 		#info {
 			background: #f6f6f6;
 		}
 
-		#info ol {
+		#info ul {
 			margin: 0.5em 4em;
 		}
 
-		#info ol li {
-			font-family: monospace;
+		#info p,
+		#summary p {
+			padding-top: 10px;
 		}
 
 		#summary {
@@ -79,155 +61,63 @@
 			background: #eee;
 			border-bottom: 0px none;
 		}
-
-		pre.exception_value {
-			font-family: sans-serif;
-			color: #575757;
-			font-size: 1.5em;
-			margin: 10px 0 10px 0;
-		}
 	</style>
 </head>
 
 <body>
-	<header id="summary">
-		<h1>Page not found <small>(404)</small></h1>
+	<div id="summary">
+		<h1>Forbidden <span>(403)</span></h1>
+		<p>CSRF verification failed. Request aborted.</p>
 
-		<table class="meta">
-			<tr>
-				<th scope="row">Request Method:</th>
-				<td>GET</td>
-			</tr>
-			<tr>
-				<th scope="row">Request URL:</th>
-				<td>http://127.0.0.1:8000/authentication/demodata/</td>
-			</tr>
 
-		</table>
-	</header>
+		<p>You are seeing this message because this site requires a CSRF cookie when submitting forms. This cookie is
+			required for security reasons, to ensure that your browser is not being hijacked by third parties.</p>
+		<p>If you have configured your browser to disable cookies, please re-enable them, at least for this site, or for
+			“same-origin” requests.</p>
 
-	<main id="info">
+	</div>
 
-		<p>
-			Using the URLconf defined in <code>Neo_tokyo.urls</code>,
-			Django tried these URL patterns, in this order:
-		</p>
-		<ol>
+	<div id="info">
+		<h2>Help</h2>
 
-			<li>
+		<p>Reason given for failure:</p>
+		<pre>
+    CSRF cookie not set.
+    </pre>
 
-				<code>
-                admin/
-                
-              </code>
 
-			</li>
+		<p>In general, this can occur when there is a genuine Cross Site Request Forgery, or when
+			<a href="https://docs.djangoproject.com/en/5.1/ref/csrf/">Django’s
+				CSRF mechanism</a> has not been used correctly. For POST forms, you need to
+			ensure:</p>
 
-			<li>
+		<ul>
+			<li>Your browser is accepting cookies.</li>
 
-				<code>
-                authentication/
-                
-              </code>
+			<li>The view function passes a <code>request</code> to the template’s <a
+					href="https://docs.djangoproject.com/en/5.1/topics/templates/#django.template.backends.base.Template.render"><code>render</code></a>
+				method.</li>
 
-				<code>
-                demodata
-                [name='demodata']
-              </code>
+			<li>In the template, there is a <code>{% csrf_token
+    %}</code> template tag inside each POST form that
+				targets an internal URL.</li>
 
-			</li>
+			<li>If you are not using <code>CsrfViewMiddleware</code>, then you must use
+				<code>csrf_protect</code> on any views that use the <code>csrf_token</code>
+				template tag, as well as those that accept the POST data.</li>
 
-			<li>
+			<li>The form has a valid CSRF token. After logging in in another browser
+				tab or hitting the back button after a login, you may need to reload the
+				page with the form, because the token is rotated after a login.</li>
+		</ul>
 
-				<code>
-                authentication/
-                
-              </code>
+		<p>You’re seeing the help section of this page because you have <code>DEBUG =
+  True</code> in your Django settings file. Change that to <code>False</code>,
+			and only the initial error message will be displayed. </p>
 
-				<code>
-                user_registration/
-                [name='user_registration']
-              </code>
+		<p>You can customize this page using the CSRF_FAILURE_VIEW setting.</p>
+	</div>
 
-			</li>
-
-			<li>
-
-				<code>
-                authentication/
-                
-              </code>
-
-				<code>
-                get_user_data/&lt;int:pk&gt;/
-                [name='get_user_data']
-              </code>
-
-			</li>
-
-			<li>
-
-				<code>
-                authentication/
-                
-              </code>
-
-				<code>
-                generate_otp/
-                [name='generate_otp']
-              </code>
-
-			</li>
-
-			<li>
-
-				<code>
-                authentication/
-                
-              </code>
-
-				<code>
-                verify_otp_and_login/
-                [name='verify_otp_and_login']
-              </code>
-
-			</li>
-
-			<li>
-
-				<code>
-                api/token/
-                [name='token_obtain_pair']
-              </code>
-
-			</li>
-
-			<li>
-
-				<code>
-                api/token/refresh/
-                [name='token_refresh']
-              </code>
-
-			</li>
-
-		</ol>
-		<p>
-
-			The current path, <code>authentication/demodata/</code>,
-
-			didn’t match any of these.
-		</p>
-
-	</main>
-
-	<footer id="explanation">
-		<p>
-			You’re seeing this error because you have <code>DEBUG = True</code> in
-			your Django settings file. Change that to <code>False</code>, and Django
-			will display a standard 404 page.
-		</p>
-	</footer>
 </body>
 
 </html>
