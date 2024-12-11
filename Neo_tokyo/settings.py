@@ -79,6 +79,12 @@ DATABASES = {
 
 AUTH_USER_MODEL = 'home.CustomUser'
 
+
+AUTHENTICATION_BACKENDS = (
+    'social_core.backends.google.GoogleOAuth2',  # Google OAuth2 Backend
+    'django.contrib.auth.backends.ModelBackend', # Default backend
+)
+
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
@@ -105,6 +111,7 @@ SIMPLE_JWT = {
     "JSON_ENCODER": None,
     "JWK_URL": None,
     "LEEWAY": 0,
+    "SIGNING_KEY":SECRET_KEY,
 
     "AUTH_HEADER_TYPES": ("Bearer",),
     "AUTH_HEADER_NAME": "HTTP_AUTHORIZATION",

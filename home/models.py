@@ -36,7 +36,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     )
     date_of_birth = models.DateField(auto_now_add=False, null=True, blank=True)
     pin_code = models.BigIntegerField(default=1)
-    village = models.CharField(max_length=20)
+    age = models.CharField(max_length=20)
     district = models.CharField(max_length=20)
     state = models.CharField(max_length=20)
     address = models.TextField(blank=True, null=True, verbose_name='address')
