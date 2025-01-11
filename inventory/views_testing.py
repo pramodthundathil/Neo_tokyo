@@ -146,3 +146,12 @@ def product_variant_add(request):
         else:
             messages.error(request, form.errors)
             return redirect("admin_board")
+        
+
+def product_view(request):
+    products = Product.objects.all()
+
+    context = {
+        "products":products
+    }
+    return render(request,"product_view.html",context)

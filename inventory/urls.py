@@ -12,6 +12,7 @@ urlpatterns = [
     path('add_attribute/', views_testing.attribute_add, name='attribute_add'),
     path('add_product_spec/', views_testing.product_spec_add, name='product_spec_add'),
     path('add_product_variant/', views_testing.product_variant_add, name='product_variant_add'),
+    path('product_view/', views_testing.product_view, name='product_view'),
 
 
 
