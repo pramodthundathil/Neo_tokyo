@@ -10,7 +10,8 @@ from home import views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path("authentication/",include("home.urls"))
+    path("authentication/",include("home.urls")),
+    path("inventory/",include("inventory.urls"))
 
 ]
 

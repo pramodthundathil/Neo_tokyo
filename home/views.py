@@ -26,6 +26,11 @@ from django.core.mail import send_mail,EmailMessage
 from django.template.loader import render_to_string
 from django.contrib.sites.shortcuts import get_current_site
 
+
+from social_django.utils import load_strategy
+from rest_framework_simplejwt.tokens import RefreshToken
+from django.contrib.auth import get_user_model
+
 # Create your views here.
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
     @classmethod
@@ -82,12 +87,7 @@ def create_user(backend, user, response, *args, **kwargs):
         }
 
 
-from rest_framework.response import Response
-from rest_framework.decorators import api_view, permission_classes
-from social_django.utils import load_strategy
-from social_django.models import UserSocialAuth
-from rest_framework_simplejwt.tokens import RefreshToken
-from django.contrib.auth import get_user_model
+
 
 User = get_user_model()
 
@@ -124,8 +124,6 @@ def google_callback(request):
     except Exception as e:
         return Response({'error': str(e)}, status=400)
 
-
-
 # OTP Generation
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -149,7 +147,7 @@ def generate_otp(request):
     # Save OTP in cache for 5 minutes
     cache.set(f'otp_{identifier}', otp, timeout=300)  # 300 seconds = 5 minutes
 
-    # Simulate sending OTP (replace with email/SMS service)
+    # Simulate sending OTP 
     print(f"OTP for {identifier}: {otp}")
     email = user.email
     current_site = get_current_site(request)
@@ -182,7 +180,7 @@ def verify_otp_and_login(request):
             {'error': 'Identifier and OTP are required.'},
             status=status.HTTP_400_BAD_REQUEST
         )
-
+    
     # Retrieve OTP from cache
     stored_otp = cache.get(f'otp_{identifier}')
     if stored_otp is None or str(stored_otp) != str(otp):
@@ -218,9 +216,7 @@ def verify_otp_and_login(request):
     )
 
 
-
 # User Creation from api User model CustomUser serializer from home.serializer.py CustomUserSerializer
-
 
 # User Registration
 @api_view(['POST'])
@@ -301,7 +297,6 @@ def demodata(request):
     "role": "user",
     "password": "securepassword"
     }
-
 
     return Response(data)
 
