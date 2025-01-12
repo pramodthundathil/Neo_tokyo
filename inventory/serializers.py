@@ -19,33 +19,55 @@ class ProductVideoSerializer(serializers.ModelSerializer):
         model = ProductVideo
         fields = ['id', 'video']
 
-# Attribute Serializer
-class AttributeSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Attribute
-        fields = ['id', 'name', 'value']
-
-# Specification Serializer
-class ProductSpecificationSerializer(serializers.ModelSerializer):
-    attributes = AttributeSerializer(many=True)
-
-    class Meta:
-        model = ProductSpecification
-        fields = ['id', 'attributes']
-
-# Variant Serializer
-class ProductVariantSerializer(serializers.ModelSerializer):
-    attributes = AttributeSerializer(many=True)
-
-    class Meta:
-        model = ProductVariant
-        fields = ['id', 'attributes', 'stock', 'price']
 
 
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         models = Category
         fields = ["name", "description"]  
+
+
+class ProductAttributeCategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProductAttributeCategory
+        fields = ['id', 'name']
+
+
+class ProductAttributeSerializer(serializers.ModelSerializer):
+    category = ProductAttributeCategorySerializer(read_only=True)
+    category_id = serializers.PrimaryKeyRelatedField(
+        queryset=ProductAttributeCategory.objects.all(), source='category', write_only=True
+    )
+
+    class Meta:
+        model = ProductAttribute
+        fields = ['id', 'category', 'category_id', 'name']
+
+
+class ProductAttributeValueSerializer(serializers.ModelSerializer):
+    attribute = ProductAttributeSerializer(read_only=True)
+    attribute_id = serializers.PrimaryKeyRelatedField(
+        queryset=ProductAttribute.objects.all(), source='attribute', write_only=True
+    )
+    product_id = serializers.PrimaryKeyRelatedField(
+        queryset=Product.objects.all(), source='product', write_only=True
+    )
+
+    class Meta:
+        model = ProductAttributeValue
+        fields = ['id', 'product_id', 'attribute', 'attribute_id']
+
+
+class AttributeValueDetailSerializer(serializers.ModelSerializer):
+    attribute_value = ProductAttributeValueSerializer(read_only=True)
+    attribute_value_id = serializers.PrimaryKeyRelatedField(
+        queryset=ProductAttributeValue.objects.all(), source='attribute_value', write_only=True
+    )
+
+    class Meta:
+        model = AttributeValueDetail
+        fields = ['id', 'attribute_value', 'attribute_value_id', 'value']
+
         
 # Main Product Serializer
 class ProductSerializer(serializers.ModelSerializer):
@@ -54,8 +76,6 @@ class ProductSerializer(serializers.ModelSerializer):
     tax_value = TaxSerializer()
     images = ProductImageSerializer(many=True, read_only=True)
     videos = ProductVideoSerializer(many=True, read_only=True)
-    specifications = ProductSpecificationSerializer(many=True, read_only=True)
-    variants = ProductVariantSerializer(many=True, read_only=True)
 
     class Meta:
         model = Product

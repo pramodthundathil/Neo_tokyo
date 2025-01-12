@@ -1,5 +1,5 @@
 from django import forms
-from .models import Tax, Category, Brand, Product, ProductImage, ProductVideo, Attribute, ProductSpecification, ProductVariant
+from .models import Tax, Category, Brand, Product, ProductImage, ProductVideo
 
 # Tax Form
 class TaxForm(forms.ModelForm):
@@ -35,9 +35,9 @@ class BrandForm(forms.ModelForm):
 class ProductForm(forms.ModelForm):
     class Meta:
         model = Product
-        fields = '__all__'
+        exclude = ["product_code","price_before_tax","tax_amount"]
         widgets = {
-            'product_code': forms.TextInput(attrs={'class': 'form-control', 'id': 'product_code'}),
+            
             'name': forms.TextInput(attrs={'class': 'form-control', 'id': 'product_name'}),
             'brand': forms.Select(attrs={'class': 'form-control', 'id': 'product_brand'}),
             'description': forms.Textarea(attrs={'class': 'form-control', 'id': 'product_description'}),
@@ -57,9 +57,9 @@ class ProductForm(forms.ModelForm):
 class ProductImageForm(forms.ModelForm):
     class Meta:
         model = ProductImage
-        fields = '__all__'
+        exclude = ["product"]
         widgets = {
-            'product': forms.Select(attrs={'class': 'form-control', 'id': 'product_image_product'}),
+            
             'image': forms.FileInput(attrs={'class': 'form-control', 'id': 'product_image_file'}),
             'is_primary': forms.CheckboxInput(attrs={'class': 'form-check-input', 'id': 'product_image_is_primary'}),
         }
@@ -68,40 +68,55 @@ class ProductImageForm(forms.ModelForm):
 class ProductVideoForm(forms.ModelForm):
     class Meta:
         model = ProductVideo
-        fields = '__all__'
+        exclude = ["product"]
+
         widgets = {
-            'product': forms.Select(attrs={'class': 'form-control', 'id': 'product_video_product'}),
             'video': forms.FileInput(attrs={'class': 'form-control', 'id': 'product_video_file'}),
         }
 
-# Attribute Form
-class AttributeForm(forms.ModelForm):
+
+
+# new Forms 
+
+from django import forms
+from .models import (
+    ProductAttributeCategory,
+    ProductAttribute,
+    ProductAttributeValue,
+    AttributeValueDetail
+)
+
+class ProductAttributeCategoryForm(forms.ModelForm):
     class Meta:
-        model = Attribute
-        fields = '__all__'
+        model = ProductAttributeCategory
+        fields = ['name']
         widgets = {
-            'name': forms.TextInput(attrs={'class': 'form-control', 'id': 'attribute_name'}),
-            'value': forms.TextInput(attrs={'class': 'form-control', 'id': 'attribute_value'}),
+            'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter category name'})
         }
 
-# Product Specification Form
-class ProductSpecificationForm(forms.ModelForm):
+class ProductAttributeForm(forms.ModelForm):
     class Meta:
-        model = ProductSpecification
-        fields = '__all__'
+        model = ProductAttribute
+        fields = ['category', 'name']
         widgets = {
-            'product': forms.Select(attrs={'class': 'form-control', 'id': 'specification_product'}),
-            'attributes': forms.SelectMultiple(attrs={'class': 'form-control', 'id': 'specification_attributes'}),
+            'category': forms.Select(attrs={'class': 'form-control'}),
+            'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter attribute name'})
         }
 
-# Product Variant Form
-class ProductVariantForm(forms.ModelForm):
+class ProductAttributeValueForm(forms.ModelForm):
     class Meta:
-        model = ProductVariant
-        fields = '__all__'
+        model = ProductAttributeValue
+        fields = ['product', 'attribute']
         widgets = {
-            'product': forms.Select(attrs={'class': 'form-control', 'id': 'variant_product'}),
-            'attributes': forms.SelectMultiple(attrs={'class': 'form-control', 'id': 'variant_attributes'}),
-            'stock': forms.NumberInput(attrs={'class': 'form-control', 'id': 'variant_stock'}),
-            'price': forms.NumberInput(attrs={'class': 'form-control', 'id': 'variant_price'}),
+            'product': forms.Select(attrs={'class': 'form-control'}),
+            'attribute': forms.Select(attrs={'class': 'form-control'}),
+        }
+
+class AttributeValueDetailForm(forms.ModelForm):
+    class Meta:
+        model = AttributeValueDetail
+        fields = ['attribute_value', 'value']
+        widgets = {
+            'attribute_value': forms.Select(attrs={'class': 'form-control'}),
+            'value': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter value'})
         }

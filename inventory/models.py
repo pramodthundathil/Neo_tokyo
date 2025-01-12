@@ -54,6 +54,7 @@ class Product(models.Model):
     # youtube and broachers 
     youtube_url = models.URLField(null=True, blank=True)
     broacher = models.FileField(upload_to="product_broacher")
+    whats_inside = models.TextField()
 
     # Tax Calculations
     price_before_tax = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, default=Decimal('0.00'))
@@ -91,11 +92,11 @@ class Product(models.Model):
 
         # Generate product code if not set
         if not self.product_code:
-            self.product_code = self.generate_order_number()
+            self.product_code = self.generate_serial_number()
 
         super(Product, self).save(*args, **kwargs)
 
-    def generate_order_number(self):
+    def generate_serial_number(self):
         prefix = "PR"
         while True:
             random_number = random.randint(1000, 9999)
@@ -126,30 +127,48 @@ class ProductVideo(models.Model):
     def __str__(self):
         return f"{self.product.name} - Video"
     
-class Attribute(models.Model):
+    
+class ProductAttributeCategory(models.Model):
+    """
+    Represents categories like "Specification", "Connectivity", "Case".
+    """
     name = models.CharField(max_length=100)
-    value = models.CharField(max_length=100)
 
     def __str__(self):
-        return f"{self.name}: {self.value}"
+        return self.name
+
+
+class ProductAttribute(models.Model):
+    """
+    Represents attributes like "RAM", "Storage", "Year", "HDMI", etc.
+    """
+    category = models.ForeignKey(ProductAttributeCategory, on_delete=models.CASCADE, related_name="attributes")
+    name = models.CharField(max_length=100)
+
+    def __str__(self):
+        return f"{self.category.name} - {self.name}"
+
+
+class ProductAttributeValue(models.Model):
+    """
+    Represents values for attributes, which can be text, numbers, or lists.
+    """
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="attributes")
+    attribute = models.ForeignKey(ProductAttribute, on_delete=models.CASCADE, related_name="values")  # Use JSONField to store lists, numbers, or text dynamically
+
+    def __str__(self):
+        return f"{self.product.name} - {self.attribute.name}: {self.value}"
+
+
+
+class AttributeValueDetail(models.Model):
+    """
+    Stores individual values for a ProductAttributeValue.
+    """
+    attribute_value = models.ForeignKey(ProductAttributeValue, on_delete=models.CASCADE, related_name="details")
+    value = models.CharField(max_length=255)
+
+    def __str__(self):
+        return self.value
     
-class ProductSpecification(models.Model):
-    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='specifications')
-    attributes = models.ManyToManyField(Attribute, related_name='spec_variants')
-
-    def __str__(self):
-        return f"{self.key}: {self.value} ({self.product.name})"
-
-class ProductVariant(models.Model):
-    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='variants')
-    attributes = models.ManyToManyField(Attribute, related_name='variants')
-    stock = models.PositiveIntegerField(default=0)
-    price = models.DecimalField(max_digits=10, decimal_places=2)
-
-    def __str__(self):
-        attributes = ", ".join([f"{attr.name}: {attr.value}" for attr in self.attributes.all()])
-        return f"{self.product.name} ({attributes})"
-    
-### inventory product model details end #############################################
-
 

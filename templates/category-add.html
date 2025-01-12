@@ -1,0 +1,154 @@
+{% extends 'index.html' %}
+{% block content %}
+<style>
+    td {
+        height: 35px;
+    }
+</style>
+
+<div class="content-page card position-relative">
+    <div class="container-fluid card-body">
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="d-flex flex-wrap align-items-center justify-content-between mb-4">
+                    <div>
+                        <h4 class="mb-3">Category List </h4>
+
+                        {{form1.errors}}
+                        {{form2.errors}}
+
+                        <!-- Toast Container for Messages -->
+
+
+                        <p class="mb-0"></p>
+                    </div>
+                    <a href="" class="btn btn-primary add-list" data-bs-toggle="modal" data-bs-target="#exampleModal">
+                        <i class="bi bi-plus-circle"></i> Add OverView Category
+                    </a>
+
+
+                    <!--OverView Category Modal -->
+                    <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel"
+                        aria-hidden="true">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="exampleModalLabel">Add OverView Category</h5>
+                                    <button type="button" class="btn" data-bs-dismiss="modal"
+                                        aria-label="Close">x</button>
+                                </div>
+                                <div class="modal-body">
+                                    <form method="post">
+                                        {% csrf_token %}
+                                        {{form1.as_p}}
+                                        <button name="items" class="btn btn-primary" type="submit">Add Data</button>
+                                    </form>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary"
+                                        data-bs-dismiss="modal">Close</button>
+                                    
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <a href="" class="btn btn-primary add-list" data-bs-toggle="modal" data-bs-target="#exampleModal2">
+                        <i class="bi bi-plus-circle"></i> Add Overview Items
+                    </a>
+
+                    <!--OverView Category Modal -->
+                    <div class="modal fade" id="exampleModal2" tabindex="-1" aria-labelledby="exampleModalLabel"
+                        aria-hidden="true">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="exampleModalLabel">Add Overview Items</h5>
+                                    <button type="button" class="btn" data-bs-dismiss="modal"
+                                        aria-label="Close">x</button>
+                                </div>
+                                <div class="modal-body">
+                                    <form method="post">
+                                        {% csrf_token %}
+                                        {{form2.as_p}}
+                                        <button name="cat" class="btn btn-primary" type="submit">Add Data</button>
+                                    </form>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary"
+                                        data-bs-dismiss="modal">Close</button>
+                                    
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+
+                </div>
+            </div>
+            <div class="col-lg-12">
+                <dic class="container">
+                    <table id="categoryTable" class="display table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Category</th>
+                                <th>Attributes</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for category in categories %}
+                            <tr>
+                                <td>{{ category.name }}</td>
+                                <td>
+                                    <ul>
+                                        {% for attribute in category.attributes.all %}
+                                        <li>{{ attribute.name }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+
+                    <script>
+                        // Initialize DataTable for categoryTable
+                        $(document).ready(function () {
+                            $('#categoryTable').DataTable({
+                                responsive: true,
+                                paging: true,
+                                searching: true,
+                                ordering: true,
+                                info: true
+                            });
+                        });
+                    </script>
+
+                </dic>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Include necessary libraries -->
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.1/css/jquery.dataTables.min.css">
+<script src="https://cdn.datatables.net/1.13.1/js/jquery.dataTables.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    // Initialize DataTable
+    $(document).ready(function () {
+        $('#userTable').DataTable({
+            responsive: true,
+            paging: true,
+            searching: true,
+            ordering: true,
+            info: true
+        });
+    });
+
+
+</script>
+
+{% endblock %}

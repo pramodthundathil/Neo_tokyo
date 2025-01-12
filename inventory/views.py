@@ -15,15 +15,14 @@ from rest_framework import status
 from .serializers import (
     ProductImageSerializer,
     ProductSerializer,
-    ProductSpecificationSerializer,
-    ProductVariantSerializer,
+
     ProductVideoSerializer,
     TaxSerializer,
-    AttributeSerializer,
+
     CategorySerializer
 
 )
-from .models import Product, Category, Tax, Attribute, ProductImage, ProductVideo, ProductVariant, ProductSpecification
+from .models import Product, Category, Tax, ProductImage, ProductVideo
 from rest_framework.exceptions import PermissionDenied
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
