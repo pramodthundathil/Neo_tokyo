@@ -1,0 +1,55 @@
+{% extends 'index.html' %}
+{% block content %}
+
+<div class="container">
+    <div class="row">
+        <div class="col-md-4">
+            {% for i in product.images.all %}
+            {% if i.is_primary == True %}
+            <img src="{{i.image.url}}" style="width:80%" alt="">
+            {% endif %}
+
+            {% endfor %}
+
+        </div>
+        <div class="col-md-8">
+            <h2>{{product.name}}</h2>
+            <p>{{product.description}}</p>
+            <h1>₹ {{product.price}}</h1>
+
+        </div>
+        <div class="col md-12 mt-3">
+            <h3>Overview</h3>
+            <table class="table border-0">
+                <tr>
+                    <th>Whats Inside</th>
+                    <td colspan="2">{{product.whats_inside}}</td>
+                </tr>
+                {% for category, attributes in grouped_attributes.items %}
+                <tr>
+                    <!-- Display category only once -->
+                    <th rowspan="{{ attributes|length }}" style="vertical-align: top; text-align: left;">{{ category }}</th>
+                    <!-- Loop through attributes under this category -->
+                    {% for attribute in attributes %}
+                    {% if not forloop.first %}
+                <tr>
+                    {% endif %}
+                    <td>{{ attribute.attribute.name }}</td>
+                    <td>
+                        <ul>
+                            {% for detail in attribute.details.all %}
+                            <li>{{ detail }}</li>
+                            {% endfor %}
+                        </ul>
+                    </td>
+                </tr>
+                {% endfor %}
+                </tr>
+                {% endfor %}
+            </table>
+        </div>
+    </div>
+</div>
+
+
+{% endblock %}

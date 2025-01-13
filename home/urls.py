@@ -1,6 +1,6 @@
 
 from django.urls import path, include
-from .import views
+from .import views, views_testing
 
 urlpatterns = [
     path("demodata",views.demodata, name="demodata"),
@@ -11,4 +11,9 @@ urlpatterns = [
 
     path('auth/google/', views.google_login, name='google_login'),
     path('auth/google/callback/', views.google_callback, name='google_callback'),
+
+
+    #testing
+
+    path("",views_testing.signin,name="signin")
 ]

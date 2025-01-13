@@ -19,7 +19,7 @@ class CategoryForm(forms.ModelForm):
         widgets = {
             'name': forms.TextInput(attrs={'class': 'form-control', 'id': 'category_name'}),
             'description': forms.Textarea(attrs={'class': 'form-control', 'id': 'category_description'}),
-            'parent': forms.Select(attrs={'class': 'form-control', 'id': 'category_parent'}),
+            # 'parent': forms.Select(attrs={'class': 'form-control', 'id': 'category_parent'}),
         }
 
 # Brand Form

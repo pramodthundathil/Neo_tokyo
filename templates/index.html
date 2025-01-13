@@ -20,7 +20,7 @@
   <!-- inject:css -->
   <link rel="stylesheet" href="{%static 'css/vertical-layout-light/style.css' %}">
   <!-- endinject -->
-  <link rel="shortcut icon" href="{%static 'images/naquar_logo.png' %}" />
+  <link rel="shortcut icon" href="{%static 'images/neo.png' %}" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
     integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
@@ -330,7 +330,7 @@
       <nav class="sidebar sidebar-offcanvas" id="sidebar">
         <ul class="nav">
           <li class="nav-item">
-            <a class="nav-link" href="">
+            <a class="nav-link" href="{%url 'admin_board' %}">
               <i class="icon-grid menu-icon"></i>
               <span class="menu-title">Dashboard</span>
             </a>
@@ -375,21 +375,33 @@
               </ul>
             </div>
           </li>
-          <!-- <li class="nav-item">
+          <li class="nav-item">
             <a class="nav-link" data-toggle="collapse" href="#charts" aria-expanded="false" aria-controls="charts">
               <i class="icon-bar-graph menu-icon"></i>
-              <span class="menu-title">Finance</span>
+              <span class="menu-title">Brand And Category</span>
               <i class="menu-arrow"></i>
             </a>
             <div class="collapse" id="charts">
               <ul class="nav flex-column sub-menu">
-                <li class="nav-item"> <a class="nav-link" href="pages/charts/chartjs.html">Expense</a></li>
-                <li class="nav-item"> <a class="nav-link" href="pages/charts/chartjs.html">Income</a></li>
-                <li class="nav-item"> <a class="nav-link" href="pages/charts/chartjs.html">Taxes</a></li>
-                <li class="nav-item"> <a class="nav-link" href="pages/charts/chartjs.html">Balance Sheet</a></li>
+                <li class="nav-item"> <a class="nav-link" href="{%url 'list_brand' %}">List Brand</a></li>
               </ul>
             </div>
-          </li> -->
+          </li>
+
+
+          <li class="nav-item">
+            <a class="nav-link" data-toggle="collapse" href="#auth" aria-expanded="false" aria-controls="auth">
+              <i class="icon-layout menu-icon"></i>
+              <span class="menu-title">Overview </span>
+              <i class="menu-arrow"></i>
+            </a>
+            <div class="collapse" id="auth">
+              <ul class="nav flex-column sub-menu">
+                <li class="nav-item"> <a class="nav-link" href="{%url 'add_category' %}"> List Overview </a></li>
+                <li class="nav-item"> <a class="nav-link" href=""> Add Overview </a></li>
+              </ul>
+            </div>
+          </li>
           <li class="nav-item">
             <a class="nav-link" data-toggle="collapse" href="#tables" aria-expanded="false" aria-controls="tables">
               <i class="icon-grid-2 menu-icon"></i>
@@ -400,20 +412,6 @@
               <ul class="nav flex-column sub-menu">
                 <li class="nav-item"> <a class="nav-link" href="{%url 'ListTax' %}">List Tax</a></li>
                 <li class="nav-item"> <a class="nav-link" href="{%url 'AddTax' %}">Add Tax</a></li>
-              </ul>
-            </div>
-          </li>
-
-          <li class="nav-item">
-            <a class="nav-link" data-toggle="collapse" href="#auth" aria-expanded="false" aria-controls="auth">
-              <i class="icon-head menu-icon"></i>
-              <span class="menu-title">Categories </span>
-              <i class="menu-arrow"></i>
-            </a>
-            <div class="collapse" id="auth">
-              <ul class="nav flex-column sub-menu">
-                <li class="nav-item"> <a class="nav-link" href="{%url 'add_category' %}"> List Categories </a></li>
-                <li class="nav-item"> <a class="nav-link" href=""> Add Categories </a></li>
               </ul>
             </div>
           </li>
@@ -462,7 +460,7 @@
       </div>
       {% endfor %}
       <!-- partial -->
-      
+
       <div class="main-panel">
 
         <div class="content-wrapper">

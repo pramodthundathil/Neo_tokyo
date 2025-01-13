@@ -1,10 +1,9 @@
 {% extends 'index.html' %}
 {% block content %}
 <style>
-    td{
+    td {
         height: 35px;
     }
-    
 </style>
 
 <div class="content-page card position-relative">
@@ -16,9 +15,9 @@
                         <h4 class="mb-3">Product List</h4>
 
                         <!-- Toast Container for Messages -->
-                        
-                            
-                       
+
+
+
 
                         <p class="mb-0"></p>
                     </div>
@@ -29,7 +28,8 @@
             </div>
             <div class="col-lg-12">
                 <div class="table-responsive rounded mb-3">
-                    <table id="userTable" class="data-tables table table-striped mb-0 tbl-server-info display expandable-table">
+                    <table id="userTable"
+                        class="data-tables table table-striped mb-0 tbl-server-info display expandable-table">
                         <thead class="bg-white text-uppercase">
                             <tr class="ligth ligth-data">
                                 <th>
@@ -56,14 +56,18 @@
                                 </td>
                                 <td>{{ m.name }}</td>
                                 <td>{{ m.brand }}</td>
-                                <td>{{  m.price }}</td>
+                                <td>{{ m.price }}</td>
                                 <td>{{ m.category }}</td>
                                 <td>
                                     <div class="d-flex align-items-center list-action">
+                                        <a href="{%url 'View_product' m.id %}" class="btn btn-outline-warning"><i class="bi bi-eye-fill"></i></a>
                                         <a data-bs-toggle="tooltip" data-bs-placement="top"
-                                        data-bs-custom-class="custom-tooltip"
-                                        data-bs-title="This top tooltip is themed via CSS variables." href="" class="btn btn-info"><i class="bi bi-pencil-square"></i></a>
-                                        <a href="" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete?')">
+                                            data-bs-custom-class="custom-tooltip"
+                                            data-bs-title="This top tooltip is themed via CSS variables."
+                                            href="{%url 'product_update' m.id %}" class="btn btn-info"><i
+                                                class="bi bi-pencil-square"></i></a>
+                                        <a href="" class="btn btn-danger"
+                                            onclick="return confirm('Are you sure you want to delete?')">
                                             <i class="bi bi-trash3"></i>
                                         </a>
                                     </div>
@@ -96,7 +100,7 @@
         });
     });
 
-   
+
 </script>
 
 {% endblock %}

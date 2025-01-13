@@ -1,6 +1,8 @@
 from django import forms
 from django.shortcuts import render, redirect
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+
 from .models import Tax, Category, Brand, Product, ProductImage, ProductVideo
 from .forms import (
     TaxForm,
@@ -13,6 +15,7 @@ from .forms import (
 )
 
 # Admin Board View
+@login_required(login_url='signin')
 def admin_board(request):
     tax_form = TaxForm()
     category_form = CategoryForm()
@@ -126,7 +129,7 @@ from django.contrib import messages
 from .models import Tax
 from .forms import TaxForm
 
-
+@login_required(login_url='signin')
 def AddTax(request):
     if request.method == "POST":
         name = request.POST.get('name')
@@ -138,6 +141,7 @@ def AddTax(request):
     return render(request,"add-tax-slab.html")
 
 
+@login_required(login_url='signin')
 def ListTax(request):
     tax = Tax.objects.all()
     context = {
@@ -146,6 +150,7 @@ def ListTax(request):
     return render(request,"list-tax.html",context)
 
 
+@login_required(login_url='signin')
 def delete_tax(request,pk):
     tax = get_object_or_404(Tax,pk=pk)
     tax.delete()
@@ -153,6 +158,7 @@ def delete_tax(request,pk):
     return redirect("ListTax")
 
 
+@login_required(login_url='signin')
 def tax_single_update(request,pk):
     tax = get_object_or_404(Tax,pk=pk)
     form = TaxForm(instance = tax)
@@ -166,6 +172,7 @@ def tax_single_update(request,pk):
     return render(request,"tax-single.html",{"form":form})
 
 
+@login_required(login_url='signin')
 def list_products(request):
     products = Product.objects.all()
 
@@ -179,6 +186,7 @@ from .forms import ProductAttributeCategoryForm, ProductAttributeValueForm, Prod
 from .models import ProductAttributeCategory, ProductAttributeValue, AttributeValueDetail
 from collections import defaultdict
 
+@login_required(login_url='signin')
 def add_category(request):
     form1 = ProductAttributeCategoryForm()
     form2 = ProductAttributeForm()
@@ -214,6 +222,7 @@ def add_category(request):
     return render(request,"category-add.html",context)
 
 
+@login_required(login_url='signin')
 def add_product(request):
     form = ProductForm()
     if request.method == "POST":
@@ -233,6 +242,7 @@ def add_product(request):
     return render(request,"add-products.html",context)
 
 
+@login_required(login_url='signin')
 def product_update(request, pk):
     product = get_object_or_404(Product, id=pk)
     form = ProductForm(instance=product)
@@ -294,6 +304,7 @@ def product_update(request, pk):
     return render(request, "product_update.html", context)
 
 
+@login_required(login_url='signin')
 def add_attribute_value_to_product(request,pk):
     attribute = get_object_or_404(ProductAttributeValue, id = pk)
     if request.method == "POST":
@@ -302,3 +313,56 @@ def add_attribute_value_to_product(request,pk):
         details.save()
         messages.success(request, "Attribute value added...")
         return redirect(product_update,pk = attribute.product.id )
+    
+from django.db.models import F
+from itertools import groupby
+
+@login_required(login_url='signin')
+def View_product(request,pk):
+    product = get_object_or_404(Product,id= pk)
+    # Annotate and sort by category
+   # Fetch and sort attributes by category
+    attributes = product.attributes.select_related('attribute').prefetch_related('details').order_by('attribute__category')
+
+    # Group attributes by category
+    grouped_attributes = {}
+    for key, group in groupby(attributes, key=lambda x: x.attribute.category):
+        grouped_attributes[key] = list(group)
+
+    context = {"product":product,"grouped_attributes": grouped_attributes}
+    return render(request,"view_product_single.html",context)
+
+
+def list_brand(request):
+    form1 = BrandForm()
+    form2 = CategoryForm()
+    category = Category.objects.all()
+    brand = Brand.objects.all()
+    if request.method == "POST":
+        if "brand" in request.POST:
+            form1 = BrandForm(request.POST)
+            if form1.is_valid():
+                form1.save()
+                
+                messages.success(request, "Brand saved successfully!")
+            else:
+                messages.error(request, f"Failed to save Brand. Please fix the errors.{form1.errors}")
+            return redirect(list_brand)
+
+        elif "category" in request.POST:
+            form2 = CategoryForm(request.POST)
+            if form2.is_valid():
+                form2.save()
+                messages.success(request, "Category saved successfully!")
+            else:
+                messages.error(request, "Failed to save Category. Please fix the errors.")
+            return redirect(list_brand)
+
+
+    context = {
+        "form1":form1,
+        "form2":form2,
+        "category":category,
+        "brand":brand
+    }
+    return render(request,"list-brand.html",context)
