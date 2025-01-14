@@ -2,6 +2,7 @@ from django.shortcuts import redirect, render
 from django.contrib.auth import authenticate, load_backend, login
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+
 def signin(request):
     if request.method == "POST":
         username = request.POST.get("uname")

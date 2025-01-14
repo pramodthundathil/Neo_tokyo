@@ -29,6 +29,15 @@ urlpatterns = [
 
 
     # apis
-
+    # products 
     path("Products_view/",views.Products_view,name="Products_view"),
+    path("Products_view_single/<int:pk>",views.Products_view_single,name="Products_view_single"),
+
+    #tax model 
+
+    path("tax_view",views.tax_view,name="tax_view"),
+    path("tax_add",views.tax_add,name="tax_add"),
+    path("tax_single_view/<int:pk>",views.tax_single_view,name="tax_single_view"),
+    path("tax_update/<int:pk>",views.tax_update,name="tax_update"),
+    path("tax_delete/<int:pk>",views.tax_delete,name="tax_delete"),
 ]
