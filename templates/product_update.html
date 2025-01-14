@@ -96,97 +96,144 @@
                     </div>
                 </div>
 
-
-                <!-- Update Product -->
                 <div class="col-sm-12 mt-5">
                     <div class="card">
                         <div class="card-header">
-                            <h4 class="card-title">OverView</h4>
-                            <button class="btn btn-info" data-bs-toggle="modal" data-bs-target="#overviewModal">
-                                <i class="bi bi-plus-circle"></i> Add Overview
+                            <h4 class="card-title">Variants</h4>
+                            <button class="btn btn-info" data-bs-toggle="modal" data-bs-target="#variantModal">
+                                <i class="bi bi-plus-circle"></i> Add Variant
                             </button>
-                        </div>
-                        <div class="modal fade" id="overviewModal" tabindex="-1" aria-labelledby="overviewModalLabel"
-                            aria-hidden="true">
-                            <div class="modal-dialog">
-                                <div class="modal-content">
-                                    <div class="modal-header">
-                                        <h5 class="modal-title" id="overviewModalLabel">Add Overview</h5>
-                                        <button type="button" class="btn" data-bs-dismiss="modal"
-                                            aria-label="Close">x</button>
-                                    </div>
-                                    <div class="modal-body">
-                                        <form method="post" enctype="multipart/form-data">
-                                            {% csrf_token %}
-                                            {{ form3.as_p }}
-                                            <button name="overview" class="btn btn-primary" type="submit">Add
-                                                Overview</button>
-                                        </form>
+                            <div class="modal fade" id="variantModal" tabindex="-1" aria-labelledby="variantModalLabel"
+                                aria-hidden="true">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title" id="overviewModalLabel">Add Variant</h5>
+                                            <button type="button" class="btn" data-bs-dismiss="modal"
+                                                aria-label="Close">x</button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <form method="post" action="{%url 'add_variant' product.id %}"
+                                                enctype="multipart/form-data">
+                                                {% csrf_token %}
+                                                {{ form4.as_p }}
+                                                <button name="variant" class="btn btn-primary" type="submit">Add
+                                                    Variant</button>
+                                            </form>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
                         <div class="card-body">
-                            <table class="table table-striped">
-                                {% for i in product.attributes.all %}
-                                <tr>
-                                    <th>
-                                        {{i.attribute.category}}
-                                    </th>
-                                    <th>
-                                        {{i.attribute.name}}
-                                    </th>
-                                    <th>
-                                        <ul>
-                                            {% for j in i.details.all %}
-                                            <li>
-                                                {{j}}
-                                            </li>
-                                            {% endfor %}
-
-                                        </ul>
-                                        <form action="{%url 'add_attribute_value_to_product' i.id %}" method="post">
-                                            {% csrf_token %}
-                                            <input type="text" class="form-control" name="val" required>
-                                            <br>
-                                            <button type="submit" class="btn btn-sm btn-dark">add value</button>
-                                        </form>
-                                    </th>
-                                </tr>
-                                {% endfor %}
-                            </table>
-
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Update Product -->
-                <div class="col-sm-12 mt-5">
-                    <div class="card">
-                        <div class="card-header">
-                            <h4 class="card-title">Product Update</h4>
-                        </div>
-                        <div class="card-body">
-                            <form method="post" enctype="multipart/form-data">
-                                {% csrf_token %}
-                                <div class="row">
-                                    {% for field in form %}
-                                    <div class="col-md-6">
-                                        <div class="form-group">
-                                            <label>{{ field.label }}</label>
-                                            {{ field }}
+                            <div class="row">
+                                {% for variant in variants %}
+                                    <div class="col-md-3">
+                                        {{variant.relationship }}- {{variant.relationship_value}}
+                                        <div class="card" style="width: 80%;margin: auto; margin-top: 10px;padding: 10px;border: 1px solid gray; ">
+                                            <img src="{{variant.variant_product_images_image.1.url}}" alt="" style="width:95%">
+                                            <h5>{{variant.variant_product}}</h5>
+                                            
                                         </div>
                                     </div>
-                                    {% endfor %}
+
+
+                                {% endfor%}
+                            </div>
+                        </div>
+
+                        <!-- Update Product -->
+                        <div class="col-sm-12 mt-5">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h4 class="card-title">OverView</h4>
+                                    <button class="btn btn-info" data-bs-toggle="modal" data-bs-target="#overviewModal">
+                                        <i class="bi bi-plus-circle"></i> Add Overview
+                                    </button>
                                 </div>
-                                <button class="btn btn-primary" type="submit" name="product">Update Products</button>
-                                <button class="btn btn-danger" type="reset">Reset</button>
-                            </form>
+                                <div class="modal fade" id="overviewModal" tabindex="-1"
+                                    aria-labelledby="overviewModalLabel" aria-hidden="true">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title" id="overviewModalLabel">Add Overview</h5>
+                                                <button type="button" class="btn" data-bs-dismiss="modal"
+                                                    aria-label="Close">x</button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <form method="post" enctype="multipart/form-data">
+                                                    {% csrf_token %}
+                                                    {{ form3.as_p }}
+                                                    <button name="overview" class="btn btn-primary" type="submit">Add
+                                                        Overview</button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <table class="table table-striped">
+                                        {% for i in product.attributes.all %}
+                                        <tr>
+                                            <th>
+                                                {{i.attribute.category}}
+                                            </th>
+                                            <th>
+                                                {{i.attribute.name}}
+                                            </th>
+                                            <th>
+                                                <ul>
+                                                    {% for j in i.details.all %}
+                                                    <li>
+                                                        {{j}}
+                                                    </li>
+                                                    {% endfor %}
+
+                                                </ul>
+                                                <form action="{%url 'add_attribute_value_to_product' i.id %}"
+                                                    method="post">
+                                                    {% csrf_token %}
+                                                    <input type="text" class="form-control" name="val" required>
+                                                    <br>
+                                                    <button type="submit" class="btn btn-sm btn-dark">add value</button>
+                                                </form>
+                                            </th>
+                                        </tr>
+                                        {% endfor %}
+                                    </table>
+
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Update Product -->
+                        <div class="col-sm-12 mt-5">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h4 class="card-title">Product Update</h4>
+                                </div>
+                                <div class="card-body">
+                                    <form method="post" enctype="multipart/form-data">
+                                        {% csrf_token %}
+                                        <div class="row">
+                                            {% for field in form %}
+                                            <div class="col-md-6">
+                                                <div class="form-group">
+                                                    <label>{{ field.label }}</label>
+                                                    {{ field }}
+                                                </div>
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+                                        <button class="btn btn-primary" type="submit" name="product">Update
+                                            Products</button>
+                                        <button class="btn btn-danger" type="reset">Reset</button>
+                                    </form>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
-</div>
-{% endblock %}
+        {% endblock %}

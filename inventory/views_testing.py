@@ -11,6 +11,7 @@ from .forms import (
     ProductForm,
     ProductImageForm,
     ProductVideoForm,
+    ProductVariantForm
 
 )
 
@@ -183,7 +184,7 @@ def list_products(request):
 
 
 from .forms import ProductAttributeCategoryForm, ProductAttributeValueForm, ProductAttributeForm, AttributeValueDetailForm
-from .models import ProductAttributeCategory, ProductAttributeValue, AttributeValueDetail
+from .models import ProductAttributeCategory, ProductAttributeValue, AttributeValueDetail, ProductVariant
 from collections import defaultdict
 
 @login_required(login_url='signin')
@@ -241,6 +242,33 @@ def add_product(request):
     }
     return render(request,"add-products.html",context)
 
+from collections import defaultdict
+
+def get_variant_relationships():
+    # Fetch all ProductVariant instances
+    variants = ProductVariant.objects.select_related('product', 'variant_product', 'relationship')
+    
+    # Create a dictionary to store relationships
+    relationship_dict = defaultdict(list)
+    
+    # Populate the dictionary
+    for variant in variants:
+        key = {
+            "relationship": variant.relationship.name,
+            "relationship_value": variant.relationship_value,
+        }
+        value = {
+            "product": variant.product.name,
+            "variant_product": variant.variant_product.name,
+        }
+        relationship_dict[frozenset(key.items())].append(value)
+    
+    # Convert frozenset keys to dictionaries for better readability
+    final_dict = {dict(key): value for key, value in relationship_dict.items()}
+    
+    return final_dict
+
+
 
 @login_required(login_url='signin')
 def product_update(request, pk):
@@ -249,6 +277,12 @@ def product_update(request, pk):
     form1 = ProductImageForm(initial={'product': product})
     form2 = ProductVideoForm(initial={'product': product})
     form3 = ProductAttributeValueForm(initial={'product': product})
+    form4 = ProductVariantForm(initial={'product': product})
+
+    variants = product.variant_parent.all()
+
+
+    print(variants, "-----------------------------------")
     
 
     if request.method == "POST":
@@ -260,7 +294,7 @@ def product_update(request, pk):
                 photo.save()
                 messages.success(request, "Photo saved successfully!")
             else:
-                messages.error(request, "Failed to save photo. Please fix the errors.")
+                messages.error(request, f"Failed to save photo. Please fix the errors.{form1.errors}")
             return redirect("product_update", pk=pk)
 
         elif "video" in request.POST:
@@ -271,10 +305,10 @@ def product_update(request, pk):
                 video.save()
                 messages.success(request, "Video saved successfully!")
             else:
-                messages.error(request, "Failed to save video. Please fix the errors.")
+                messages.error(request, f"Failed to save video. Please fix the errors.{form1.errors}")
             return redirect("product_update", pk=pk)
 
-        elif "product" in request.POST:
+        elif "overview" in request.POST:
             form = ProductAttributeValueForm(request.POST)
             if form.is_valid():
                 overview = form.save()
@@ -286,22 +320,35 @@ def product_update(request, pk):
             return redirect("product_update", pk=pk)
         
 
-        elif "overview" in request.POST:
+        elif "product" in request.POST:
             form = ProductForm(request.POST, request.FILES, instance=product)
             if form.is_valid():
                 form.save()
                 messages.success(request, "Product updated successfully!")
             else:
-                messages.error(request, "Failed to update product. Please fix the errors.")
+                messages.error(request, f"Failed to update product. Please fix the errors.{form.errors}")
             return redirect("product_update", pk=pk)
+            
 
     attributes_grouped = defaultdict(list)
 
     for attribute_value in product.attributes.all():
         attributes_grouped[attribute_value.attribute.category].append(attribute_value)
 
-    context = {"form": form, "form1": form1, "form2": form2,"form3":form3, "product":product,"attributes_grouped":attributes_grouped}
+    context = {"form": form, "form1": form1, "form2": form2,"form3":form3,"form4":form4, "product":product,"attributes_grouped":attributes_grouped,"variants":variants}
     return render(request, "product_update.html", context)
+
+
+def add_variant(request, pk):
+    product = get_object_or_404(Product,id = pk)
+    if request.method == "POST":
+        form4 = ProductVariantForm(request.POST)
+        if form4.is_valid():
+            form4.save()
+            messages.success(request, "Product Variant updated successfully!")
+        else:
+            messages.error(request, f"Failed to update product. Please fix the errors.{form4.errors}")
+        return redirect("product_update", pk=pk)
 
 
 @login_required(login_url='signin')

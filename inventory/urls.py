@@ -23,6 +23,9 @@ urlpatterns = [
     path("add_attribute_value_to_product/<int:pk>",views_testing.add_attribute_value_to_product,name="add_attribute_value_to_product"),
     path("View_product/<int:pk>",views_testing.View_product,name="View_product"),
     path("list_brand",views_testing.list_brand,name="list_brand"),
+    path("add_variant/<int:pk>",views_testing.add_variant,name="add_variant"),
+
+    
 
 
     # apis

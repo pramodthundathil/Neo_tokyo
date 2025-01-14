@@ -51,6 +51,7 @@ class ProductForm(forms.ModelForm):
             'broacher': forms.FileInput(attrs={'class': 'form-control', 'id': 'product_broacher'}),
             'tax': forms.Select(attrs={'class': 'form-control', 'id': 'product_tax'}),
             'tax_value': forms.Select(attrs={'class': 'form-control', 'id': 'product_tax_value'}),
+            "more_info":forms.URLInput(attrs={'class': 'form-control', 'id': 'product_youtube_url',"placeholder":"Url for More Information"}),
         }
 
 # Product Image Form
@@ -119,4 +120,18 @@ class AttributeValueDetailForm(forms.ModelForm):
         widgets = {
             'attribute_value': forms.Select(attrs={'class': 'form-control'}),
             'value': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter value'})
+        }
+
+
+from .models import ProductVariant
+
+class ProductVariantForm(forms.ModelForm):
+    class Meta:
+        model = ProductVariant
+        fields = '__all__'
+        widgets = {
+            'product': forms.Select(attrs={'class': 'form-control'}),
+            'variant_product': forms.Select(attrs={'class': 'form-control'}),
+            'relationship': forms.Select(attrs={'class': 'form-control'}),
+            'relationship_value': forms.TextInput(attrs={'class': 'form-control'}),
         }

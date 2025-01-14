@@ -16,11 +16,40 @@
             <h2>{{product.name}}</h2>
             <p>{{product.description}}</p>
             <h1>₹ {{product.price}}</h1>
+            {% if product.more_info is not None %}
+            <div class="varinats" style="padding: 20px;">
+                <h4 class="text-primary">Available Variants</h4>
+                <div class="row">
+                    {% for variant in product.variant_parent.all %}
+
+                    <div class="col-md-3">
+                        {{variant.relationship }}- {{variant.relationship_value}}
+                        <a href="{%url 'View_product' variant.variant_product.id  %}"
+                            style="display: block; text-decoration: none;color: black;">
+
+                        <div class="card"
+                            style="width: 80%;margin: auto; margin-top: 10px;padding: 10px;border: 1px solid gray; ">
+                            <img src="{{variant.variant_product_images_image.1.url}}" alt="" style="width:95%">
+                            <h5>{{variant.variant_product}}</h5>
+
+                        </div>
+                        </a>
+
+                    </div>
+
+
+                    {% endfor%}
+                </div>
+            </div>
+
+            Click for <a target="_blank" href="{{product.more_info}}">More Info</a>
+
+            {% endif %}
 
         </div>
         <div class="col md-12 mt-3">
             <h3>Overview</h3>
-            <table class="table border-0">
+            <table class="table border-0 table-responsive">
                 <tr>
                     <th>Whats Inside</th>
                     <td colspan="2">{{product.whats_inside}}</td>
@@ -28,17 +57,17 @@
                 {% for category, attributes in grouped_attributes.items %}
                 <tr>
                     <!-- Display category only once -->
-                    <th rowspan="{{ attributes|length }}" style="vertical-align: top; text-align: left;">{{ category }}</th>
+                    <th rowspan="{{ attributes|length }}" style="vertical-align: top; text-align: left;width:30%">{{category }}</th>
                     <!-- Loop through attributes under this category -->
                     {% for attribute in attributes %}
                     {% if not forloop.first %}
                 <tr>
                     {% endif %}
-                    <td>{{ attribute.attribute.name }}</td>
+                    <td style="vertical-align: top; text-align: left;width: 10%;">{{ attribute.attribute.name }}</td>
                     <td>
                         <ul>
                             {% for detail in attribute.details.all %}
-                            <li>{{ detail }}</li>
+                            <li style="vertical-align: top; text-align: left;list-style: none;">{{ detail }}</li>
                             {% endfor %}
                         </ul>
                     </td>

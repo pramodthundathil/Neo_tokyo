@@ -55,6 +55,7 @@ class Product(models.Model):
     youtube_url = models.URLField(null=True, blank=True)
     broacher = models.FileField(upload_to="product_broacher")
     whats_inside = models.TextField()
+    more_info = models.URLField(null=True, blank=True)
 
     # Tax Calculations
     price_before_tax = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, default=Decimal('0.00'))
@@ -170,5 +171,21 @@ class AttributeValueDetail(models.Model):
 
     def __str__(self):
         return self.value
+    
+
+class VariantRelationshipAttribute(models.Model):
+    name = models.CharField(max_length=20)
+
+    def __str__(self):
+        return self.name
+    
+class ProductVariant(models.Model):
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="variant_parent")
+    variant_product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="variant_item")
+    relationship = models.ForeignKey(VariantRelationshipAttribute, on_delete=models.CASCADE)
+    relationship_value = models.CharField(max_length=20)
+
+    def __str__(self):
+        return f"{self.product} -> {self.variant_product} ({self.relationship_value})"
     
 
