@@ -31,6 +31,15 @@ from social_django.utils import load_strategy
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import get_user_model
 
+
+#swagger authentication
+
+from rest_framework.permissions import BasePermission
+
+class IsAuthenticatedForSwagger(BasePermission):
+    def has_permission(self, request, view):
+        return request.user and request.user.is_authenticated
+
 # Create your views here.
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
     @classmethod
@@ -44,6 +53,18 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
     
 class MyTokenObtainPairView(TokenObtainPairView):
     serializer_class = MyTokenObtainPairSerializer
+
+
+from rest_framework import permissions
+
+class IsAdmin(permissions.BasePermission):
+    """
+    Custom permission to only allow admin users to access this view.
+    """
+    def has_permission(self, request, view):
+        # Check if the user is authenticated and has the 'admin' role
+        return request.user and request.user.role == 'admin'
+
 
 
 

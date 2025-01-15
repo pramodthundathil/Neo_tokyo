@@ -1,7 +1,18 @@
 from django.urls import path
 from . import views_testing, views
 
+from rest_framework.routers import DefaultRouter
+from .views import CategoryViewSet, TaxViewSet, BrandViewSet, ProductAttributeCategorySerializerViewSet
+
+router = DefaultRouter()
+
+
+
+
 urlpatterns = [
+
+    #=====================================================================================================
+
     path('admin_board', views_testing.admin_board, name='admin_board'),
     path('add_tax/', views_testing.tax_add, name='tax_add'),
     path('add_category/', views_testing.category_add, name='category_add'),
@@ -24,14 +35,21 @@ urlpatterns = [
     path("View_product/<int:pk>",views_testing.View_product,name="View_product"),
     path("list_brand",views_testing.list_brand,name="list_brand"),
     path("add_variant/<int:pk>",views_testing.add_variant,name="add_variant"),
+    #=====================================================================================================
 
     
 
 
+  
+    #=====================================================================================================
     # apis
+    #=====================================================================================================
+    #=====================================================================================================
+   
     # products 
     path("Products_view/",views.Products_view,name="Products_view"),
     path("Products_view_single/<int:pk>",views.Products_view_single,name="Products_view_single"),
+    #=====================================================================================================
 
     #tax model 
 
@@ -40,4 +58,25 @@ urlpatterns = [
     path("tax_single_view/<int:pk>",views.tax_single_view,name="tax_single_view"),
     path("tax_update/<int:pk>",views.tax_update,name="tax_update"),
     path("tax_delete/<int:pk>",views.tax_delete,name="tax_delete"),
+
+    #=====================================================================================================
+
+    # Category Models
+
+    path("view_category",views.view_category,name="view_category"),
+    path("category_single_view/<int:pk>",views.category_single_view,name="category_single_view"),
+    path("category_add",views.category_add,name="category_add"),
+    path("category_update/<int:pk>",views.category_update,name="category_update"),
+    path("category_delete/<int:pk>",views.category_delete,name="category_delete"),
+
+    #=====================================================================================================
+
+
 ]
+
+
+router.register(r'categories', CategoryViewSet, basename='categories')
+router.register(r'taxes', TaxViewSet, basename='taxes')
+router.register(r'brands', BrandViewSet, basename='brands'),
+router.register(r'productattribute_category', ProductAttributeCategorySerializerViewSet, basename='productattribute_category'),
+urlpatterns += router.urls

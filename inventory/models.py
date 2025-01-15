@@ -22,7 +22,7 @@ class Tax(models.Model):
 
 # Category Model
 class Category(models.Model):
-    name = models.CharField(max_length=255, unique=True)
+    name = models.CharField(max_length=255, unique=True, help_text="Category Will Be Unique")
     description = models.TextField(blank=True, null=True)
     parent = models.ForeignKey(
         'self', on_delete=models.SET_NULL, blank=True, null=True, related_name='subcategories'

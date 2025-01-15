@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 import json
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated, AllowAny
+from home.views import IsAdmin 
 from django.utils.decorators import method_decorator
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
@@ -13,16 +14,35 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from .serializers import (
-    ProductImageSerializer,
-    ProductSerializer,
+                    ProductImageSerializer,
+                    ProductSerializer,
 
-    ProductVideoSerializer,
-    TaxSerializer,
+                    ProductVideoSerializer,
+                    TaxSerializer,
 
-    CategorySerializer
+                    CategorySerializer,
+                    BrandSerializer,
+                    
+                    ProductAttributeSerializer,
+                    ProductAttributeCategorySerializer,
+                    ProductVariantSerializer
 
-)
-from .models import Product, Category, Tax, ProductImage, ProductVideo
+                )
+from .models import (Product,
+                      Category, 
+                      Tax, 
+                      ProductImage, 
+                      ProductVideo, 
+                      Brand,
+
+                      ProductAttribute,
+                      ProductAttributeCategory,
+                      ProductAttributeValue,
+
+                      ProductVariant,
+                      VariantRelationshipAttribute)
+
+
 from rest_framework.exceptions import PermissionDenied
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
@@ -34,6 +54,10 @@ from django.conf import settings
 from django.core.mail import send_mail,EmailMessage
 from django.template.loader import render_to_string
 from django.contrib.sites.shortcuts import get_current_site
+
+#for api documentation url 
+from drf_yasg.utils import swagger_auto_schema
+from rest_framework import viewsets
 
 
 
@@ -253,8 +277,11 @@ def Products_view_single(request,pk):
 #=========================================================================================================
 #=========================================================================================================
 
+
+#=========================================================TAX DATA ENTERING START========================
+
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@permission_classes([IsAuthenticated, IsAdmin])
 def tax_view(request):
     tax = Tax.objects.all()
     serializer = TaxSerializer(tax, many = True)
@@ -262,7 +289,7 @@ def tax_view(request):
 
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@permission_classes([IsAuthenticated, IsAdmin])
 def tax_single_view(request,pk):
     tax = get_object_or_404(Tax, id = pk)
     serializer = TaxSerializer(instance = tax)
@@ -270,7 +297,7 @@ def tax_single_view(request,pk):
 
 
 @api_view(['POST'])
-@permission_classes([IsAuthenticated])
+@permission_classes([IsAuthenticated, IsAdmin])
 def tax_add(request):
     serializer = TaxSerializer(data = request.data)
     if serializer.is_valid():
@@ -283,7 +310,7 @@ def tax_add(request):
 
 
 @api_view(['PATCH'])
-@permission_classes([IsAuthenticated])
+@permission_classes([IsAuthenticated, IsAdmin])
 def tax_update(request, pk):
     try:
         # Get the existing Tax instance by primary key (pk)
@@ -304,7 +331,7 @@ def tax_update(request, pk):
 
 
 @api_view(['DELETE'])
-@permission_classes([IsAuthenticated])
+@permission_classes([IsAuthenticated, IsAdmin])
 def tax_delete(request, pk):
     try:
         # Get the Tax instance by primary key (pk)
@@ -324,17 +351,267 @@ def tax_delete(request, pk):
 
 
 
-#=========================================================TAX DATA ENTERING START========================
+class TaxViewSet(viewsets.ModelViewSet):
+    # The queryset defines the set of objects that will be retrieved by the viewset.
+    queryset = Tax.objects.all()
+    
+    # This defines which serializer should be used to serialize and deserialize the data.
+    serializer_class = TaxSerializer
+    
+    # This defines which permissions the user needs to access this view.
+    permission_classes = [IsAuthenticated, IsAdmin]
 
+    def create(self, request, *args, **kwargs):
+        # Custom response for successful creation
+        response = super().create(request, *args, **kwargs)
+        return Response(
+            {
+                "message": "Tax created successfully!",
+                "data": response.data,
+            },
+            status=status.HTTP_201_CREATED,
+        )
 
+    def update(self, request, *args, **kwargs):
+        # Custom response for successful update
+        response = super().update(request, *args, **kwargs)
+        return Response(
+            {
+                "message": "Tax updated successfully!",
+                "data": response.data,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+    def destroy(self, request, *args, **kwargs):
+        # Custom response for successful deletion
+        super().destroy(request, *args, **kwargs)
+        return Response(
+            {
+                "message": "Tax deleted successfully!",
+            },
+            status=status.HTTP_204_NO_CONTENT,
+        )
 
 
 #=========================================================TAX DATA ENTERING END==========================
 
+#=========================================================================================================
+#=========================================================================================================
+
+#=========================================================CATEGORY ENTERING Start==========================
+
+@swagger_auto_schema(methods=['get'],operation_description="Get a list of all categories")
+@api_view(['GET'])
+@permission_classes([IsAuthenticated, IsAdmin])
+def view_category(request):
+    category = Category.objects.all()
+    serializer = CategorySerializer(category, many = True)
+    return Response(serializer.data,status=status.HTTP_200_OK )
+
+
+@swagger_auto_schema(methods=['get'],operation_description="Get a Single Instance categories")
+@api_view(['GET'])
+@permission_classes([IsAuthenticated, IsAdmin])
+def category_single_view(request,pk):
+    category = get_object_or_404(Category, id = pk)
+    serializer = CategorySerializer(instance = category)
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+@swagger_auto_schema(methods=['post'],operation_description="Add new categories")
+@api_view(['POST'])
+@permission_classes([IsAuthenticated, IsAdmin])
+def category_add(request):
+    serializer = CategorySerializer(data = request.data)
+    if serializer.is_valid():
+        serializer.save()
+        return Response(
+            {"message": "Category added successfully!"},
+            status=status.HTTP_201_CREATED
+        )
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@swagger_auto_schema(methods=['patch'],operation_description="Update a Single Instance category")
+@api_view(['PATCH'])
+@permission_classes([IsAuthenticated, IsAdmin])
+def category_update(request, pk):
+    try:
+        # Get the existing Tax instance by primary key (pk)
+        category_instance = Category.objects.get(pk=pk)
+    except Category.DoesNotExist:
+        return Response(
+            {"error": "Category record not found."},
+            status=status.HTTP_404_NOT_FOUND
+        )
+    serializer = CategorySerializer(category_instance, data=request.data, partial=True) 
+    if serializer.is_valid():
+        serializer.save()
+        return Response(
+            {"message": "Category record updated successfully!"},
+            status=status.HTTP_200_OK
+        )
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@swagger_auto_schema(methods=['delete'],operation_description="Delete a Single Instance categories")
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated, IsAdmin])
+def category_delete(request, pk):
+    try:
+        # Get the Tax instance by primary key (pk)
+        category_instance = Category.objects.get(pk=pk)
+    except category_instance.DoesNotExist:
+        return Response(
+            {"error": "Category record not found."},
+            status=status.HTTP_404_NOT_FOUND
+        )
+
+    # Delete the instance
+    category_instance.delete()
+    return Response(
+        {"message": "Category record deleted successfully!"},
+        status=status.HTTP_204_NO_CONTENT
+    )
 
 
 
+class CategoryViewSet(viewsets.ModelViewSet):
+    # The queryset defines the set of objects that will be retrieved by the viewset.
+    queryset = Category.objects.all()
+    
+    # This defines which serializer should be used to serialize and deserialize the data.
+    serializer_class = CategorySerializer
+    
+    # This defines which permissions the user needs to access this view.
+    permission_classes = [IsAuthenticated, IsAdmin]
 
+    def create(self, request, *args, **kwargs):
+        # Custom response for successful creation
+        response = super().create(request, *args, **kwargs)
+        return Response(
+            {
+                "message": "Category created successfully!",
+                "data": response.data,
+            },
+            status=status.HTTP_201_CREATED,
+        )
+
+    def update(self, request, *args, **kwargs):
+        # Custom response for successful update
+        response = super().update(request, *args, **kwargs)
+        return Response(
+            {
+                "message": "Category updated successfully!",
+                "data": response.data,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+    def destroy(self, request, *args, **kwargs):
+        # Custom response for successful deletion
+        super().destroy(request, *args, **kwargs)
+        return Response(
+            {
+                "message": "Category deleted successfully!",
+            },
+            status=status.HTTP_204_NO_CONTENT,
+        )
+
+#=========================================================CATEGORY ENTERING END==========================
+
+#=========================================================================================================
+#=========================================================================================================
+
+#=========================================================BRAND ENTERING Start==========================
+
+class BrandViewSet(viewsets.ModelViewSet):
+    queryset = Brand.objects.all()
+    serializer_class  = BrandSerializer
+    permission_classes = [IsAuthenticated, IsAdmin]
+
+    def create(self, request, *args, **kwargs):
+        # Custom response for successful creation
+        response = super().create(request, *args, **kwargs)
+        return Response(
+            {
+                "message": "Brand created successfully!",
+                "data": response.data,
+            },
+            status=status.HTTP_201_CREATED,
+        )
+
+    def update(self, request, *args, **kwargs):
+        # Custom response for successful update
+        response = super().update(request, *args, **kwargs)
+        return Response(
+            {
+                "message": "Brand updated successfully!",
+                "data": response.data,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+    def destroy(self, request, *args, **kwargs):
+        # Custom response for successful deletion
+        super().destroy(request, *args, **kwargs)
+        return Response(
+            {
+                "message": "Brand deleted successfully!",
+            },
+            status=status.HTTP_204_NO_CONTENT,
+        )
+
+#=========================================================BRAND ENTERING END==========================
+
+
+#=========================================================================================================
+#=========================================================================================================
+#=========================================================================================================
+#=========================================================================================================
+
+#=========================================================Attribute Category ENTERING START==========================
+#ProductAttributeCategory 
+
+class ProductAttributeCategorySerializerViewSet(viewsets.ModelViewSet):
+    queryset = ProductAttributeCategory.objects.all()
+    serializer_class  = ProductAttributeCategorySerializer
+    permission_classes = [IsAuthenticated, IsAdmin]
+
+    def create(self, request, *args, **kwargs):
+        # Custom response for successful creation
+        response = super().create(request, *args, **kwargs)
+        return Response(
+            {
+                "message": "Attribute Category created successfully!",
+                "data": response.data,
+            },
+            status=status.HTTP_201_CREATED,
+        )
+
+    def update(self, request, *args, **kwargs):
+        # Custom response for successful update
+        response = super().update(request, *args, **kwargs)
+        return Response(
+            {
+                "message": "Attribute Category updated successfully!",
+                "data": response.data,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+    def destroy(self, request, *args, **kwargs):
+        # Custom response for successful deletion
+        super().destroy(request, *args, **kwargs)
+        return Response(
+            {
+                "message": "Attribute Category deleted successfully!",
+            },
+            status=status.HTTP_204_NO_CONTENT,
+        )
+
+#=========================================================Attribute Category ENTERING END==========================
 #=========================================================================================================
 #=========================================================================================================
 #=========================================================================================================

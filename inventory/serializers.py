@@ -23,8 +23,14 @@ class ProductVideoSerializer(serializers.ModelSerializer):
 
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
-        models = Category
-        fields = ["name", "description"]  
+        model = Category
+        fields = ["id","name", "description"]  
+
+
+class BrandSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Brand
+        fields = ["id","name"]
 
 
 class ProductAttributeCategorySerializer(serializers.ModelSerializer):
