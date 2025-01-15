@@ -2,7 +2,15 @@ from django.urls import path
 from . import views_testing, views
 
 from rest_framework.routers import DefaultRouter
-from .views import CategoryViewSet, TaxViewSet, BrandViewSet, ProductAttributeCategorySerializerViewSet
+from .views import (
+    CategoryViewSet, TaxViewSet, BrandViewSet,
+    ProductAttributeCategorySerializerViewSet, 
+    ProductAttributeViewSet, ProductAttributeValueViewSet,
+    AttributeValueDetailViewSet,
+    VariantRelationshipAttributeViewSet,
+    ProductVariantViewSet,
+    ProductViewSet,
+    )
 
 router = DefaultRouter()
 
@@ -79,4 +87,12 @@ router.register(r'categories', CategoryViewSet, basename='categories')
 router.register(r'taxes', TaxViewSet, basename='taxes')
 router.register(r'brands', BrandViewSet, basename='brands'),
 router.register(r'productattribute_category', ProductAttributeCategorySerializerViewSet, basename='productattribute_category'),
+router.register(r'productattribute', ProductAttributeViewSet, basename='productattribute'),
+router.register(r'productattribute_value', ProductAttributeValueViewSet, basename='productattribute_value'),
+router.register(r'productattribute_details', AttributeValueDetailViewSet, basename='productattribute_details'),
+router.register(r'variant_relationship', VariantRelationshipAttributeViewSet, basename='variant_relationship'),
+router.register(r'product_variant', ProductVariantViewSet, basename='product_variant'),
+router.register(r'product_admin', ProductViewSet, basename="product_admin")
+
 urlpatterns += router.urls
+

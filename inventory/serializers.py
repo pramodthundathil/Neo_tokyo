@@ -75,15 +75,15 @@ class ProductAttributeValueSerializer(serializers.ModelSerializer):
         fields = ['id', 'product_id', 'attribute', 'attribute_id', 'details']
 
 
-class AttributeValueDetailSerializer(serializers.ModelSerializer):
-    attribute_value = ProductAttributeValueSerializer(read_only=True)
-    attribute_value_id = serializers.PrimaryKeyRelatedField(
-        queryset=ProductAttributeValue.objects.all(), source='attribute_value', write_only=True
-    )
+# class AttributeValueDetailSerializer(serializers.ModelSerializer):
+#     attribute_value = ProductAttributeValueSerializer(read_only=True)
+#     attribute_value_id = serializers.PrimaryKeyRelatedField(
+#         queryset=ProductAttributeValue.objects.all(), source='attribute_value', write_only=True
+#     )
 
-    class Meta:
-        model = AttributeValueDetail
-        fields = ['id', 'attribute_value', 'attribute_value_id', 'value']
+#     class Meta:
+#         model = AttributeValueDetail
+#         fields = ['id', 'attribute_value', 'attribute_value_id', 'value']
 
 
 
@@ -116,10 +116,32 @@ class ProductVariantSerializer(serializers.ModelSerializer):
 
         
 # Main Product Serializer
+# class ProductSerializer(serializers.ModelSerializer):
+#     category = serializers.StringRelatedField()
+#     brand = serializers.StringRelatedField()
+#     # tax_value = TaxSerializer()
+#     images = ProductImageSerializer(many=True, read_only=True)
+#     videos = ProductVideoSerializer(many=True, read_only=True)
+#     attributes = ProductAttributeValueSerializer(many=True, read_only=True)
+#     variant_parent = ProductVariantSerializer(many=True, read_only=True)
+
+#     class Meta:
+#         model = Product
+#         fields = [
+#             'id', 'product_code', 'name', 'brand', 'description', 'category', 
+#             'mrp', 'price', 'discount_price', 'stock', 'is_available',
+#             'price_before_tax', 'tax_amount', 'tax', 'tax_value',
+#             'youtube_url', 'broacher',"whats_inside","more_info", 'images', 'videos', 
+#             'attributes', 'variant_parent', 'created_at', 'updated_at'
+#         ]
+
+
+from rest_framework import serializers
+from .models import Product, Brand, Category
+
 class ProductSerializer(serializers.ModelSerializer):
-    category = serializers.StringRelatedField()
-    brand = serializers.StringRelatedField()
-    tax_value = TaxSerializer()
+    category = serializers.PrimaryKeyRelatedField(queryset=Category.objects.all())
+    brand = serializers.PrimaryKeyRelatedField(queryset=Brand.objects.all())
     images = ProductImageSerializer(many=True, read_only=True)
     videos = ProductVideoSerializer(many=True, read_only=True)
     attributes = ProductAttributeValueSerializer(many=True, read_only=True)
@@ -131,6 +153,6 @@ class ProductSerializer(serializers.ModelSerializer):
             'id', 'product_code', 'name', 'brand', 'description', 'category', 
             'mrp', 'price', 'discount_price', 'stock', 'is_available',
             'price_before_tax', 'tax_amount', 'tax', 'tax_value',
-            'youtube_url', 'broacher',"whats_inside","more_info", 'images', 'videos', 
-            'attributes', 'variant_parent', 'created_at', 'updated_at'
+            'youtube_url', 'broacher', "whats_inside", "more_info", 'images', 
+            'videos', 'attributes', 'variant_parent', 'created_at', 'updated_at'
         ]

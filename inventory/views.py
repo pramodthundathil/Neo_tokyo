@@ -25,7 +25,11 @@ from .serializers import (
                     
                     ProductAttributeSerializer,
                     ProductAttributeCategorySerializer,
-                    ProductVariantSerializer
+                    ProductVariantSerializer,
+                    ProductAttributeValueSerializer,
+                    AttributeValueDetail,
+                    AttributeValueDetailSerializer,
+                    VariantRelationshipAttributeSerializer
 
                 )
 from .models import (Product,
@@ -610,9 +614,304 @@ class ProductAttributeCategorySerializerViewSet(viewsets.ModelViewSet):
             },
             status=status.HTTP_204_NO_CONTENT,
         )
+    
+
+#=========================================================Attribute Category ENTERING START==========================
+# model : ProductAttribute
+
+class ProductAttributeViewSet(viewsets.ModelViewSet):
+    queryset = ProductAttribute.objects.all()
+    serializer_class = ProductAttributeSerializer
+    permission_classes = [IsAuthenticated,IsAdmin]
+
+    def create(self, request, *args, **kwargs):
+        # Custom response for successful creation
+        response = super().create(request, *args, **kwargs)
+        return Response(
+            {
+                "message": "Attribute  created successfully!",
+                "data": response.data,
+            },
+            status=status.HTTP_201_CREATED,
+        )
+
+    def update(self, request, *args, **kwargs):
+        # Custom response for successful update
+        response = super().update(request, *args, **kwargs)
+        return Response(
+            {
+                "message": "Attribute  updated successfully!",
+                "data": response.data,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+    def destroy(self, request, *args, **kwargs):
+        # Custom response for successful deletion
+        super().destroy(request, *args, **kwargs)
+        return Response(
+            {
+                "message": "Attribute deleted successfully!",
+            },
+            status=status.HTTP_204_NO_CONTENT,
+        )
 
 #=========================================================Attribute Category ENTERING END==========================
+
+
+
+
+#=========================================================Attribute Value Start==========================
+
+
+
+# model :ProductAttributeValue
+
+class ProductAttributeValueViewSet(viewsets.ModelViewSet):
+    queryset = ProductAttributeValue.objects.all()
+    serializer_class = ProductAttributeValueSerializer 
+    permission_classes = [IsAuthenticated, IsAdmin]
+
+    def create(self, request, *args, **kwargs):
+        # Custom response for successful creation
+        response = super().create(request, *args, **kwargs)
+        input_data = request.data
+        product_id = input_data["product_id"]
+        product = get_object_or_404(Product, id = product_id)
+        product_serializer = ProductSerializer(instance =product) 
+        return Response(
+            {
+                "message": "Product Attribute Value  created successfully!",
+                "data": product_serializer.data,
+                
+            },
+            status=status.HTTP_201_CREATED,
+        )
+
+    def update(self, request, *args, **kwargs):
+        # Custom response for successful update
+        response = super().update(request, *args, **kwargs)
+        input_data = request.data
+        product_id = input_data["product_id"]
+        product = get_object_or_404(Product, id = product_id)
+        product_serializer = ProductSerializer(instance =product) 
+        return Response(
+            {
+                "message": "Product Attribute Value   updated successfully!",
+                "data": product_serializer.data,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+    def destroy(self, request, *args, **kwargs):
+        # Custom response for successful deletion
+        super().destroy(request, *args, **kwargs)
+        return Response(
+            {
+                "message": "Product Attribute Value  deleted successfully!",
+            },
+            status=status.HTTP_204_NO_CONTENT,
+        )
+    
+#=========================================================Attribute Value end==========================
+
+#=========================================================Attribute Value  details Start==========================
+
+# model:- AttributeValueDetail 
+
+class AttributeValueDetailViewSet(viewsets.ModelViewSet):
+    queryset = AttributeValueDetail.objects.all()
+    serializer_class = AttributeValueDetailSerializer
+
+    permission_classes = [IsAuthenticated, IsAdmin]
+
+    def create(self, request, *args, **kwargs):
+        # Custom response for successful creation
+        response = super().create(request, *args, **kwargs)
+        input_data = request.data
+        attribute_id = input_data["attribute_value_id"]
+        product = get_object_or_404(ProductAttributeValue, id = attribute_id).product
+        product_serializer = ProductSerializer(instance =product) 
+        return Response(
+            {
+                "message": "Product Attribute Value Details created successfully!",
+                "data": product_serializer.data,
+                
+            },
+            status=status.HTTP_201_CREATED,
+        )
+
+    def update(self, request, *args, **kwargs):
+        # Custom response for successful update
+        response = super().update(request, *args, **kwargs)
+        input_data = request.data
+        attribute_id = input_data["attribute_value_id"]
+        product = get_object_or_404(ProductAttributeValue, id = attribute_id).product
+        product_serializer = ProductSerializer(instance =product) 
+        return Response(
+            {
+                "message": "Product Attribute Value Details   updated successfully!",
+                "data": product_serializer.data,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+    def destroy(self, request, *args, **kwargs):
+        # Custom response for successful deletion
+        super().destroy(request, *args, **kwargs)
+        return Response(
+            {
+                "message": "Product Attribute Value  Details deleted successfully!",
+            },
+            status=status.HTTP_204_NO_CONTENT,
+        )
+    
+#=========================================================Attribute Value end==========================
 #=========================================================================================================
 #=========================================================================================================
+#=========================================================================================================
+#=========================================================================================================
+#=========================================================Product Variant START==========================
+# modal: VariantRelationshipAttribute
+
+class VariantRelationshipAttributeViewSet(viewsets.ModelViewSet):
+    queryset = VariantRelationshipAttribute.objects.all()
+    serializer_class = VariantRelationshipAttributeSerializer
+    permission_classes = [IsAuthenticated, IsAdmin]
+
+
+    def create(self, request, *args, **kwargs):
+        # Custom response for successful creation
+        response = super().create(request, *args, **kwargs)
+        
+        return Response(
+            {
+                "message": "Variant Relationship  Value created successfully!",
+                "data": response.data,
+                
+            },
+            status=status.HTTP_201_CREATED,
+        )
+
+    def update(self, request, *args, **kwargs):
+        # Custom response for successful update
+        response = super().update(request, *args, **kwargs)
+        
+        return Response(
+            {
+                "message": "Variant Relationship  Value updated successfully!",
+                "data": response.data,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+    def destroy(self, request, *args, **kwargs):
+        # Custom response for successful deletion
+        super().destroy(request, *args, **kwargs)
+        return Response(
+            {
+                "message": "Variant Relationship  Value  Details deleted successfully!",
+            },
+            status=status.HTTP_204_NO_CONTENT,
+        )
+
+# model: ProductVariant
+#    
+
+class ProductVariantViewSet(viewsets.ModelViewSet):
+    queryset = ProductVariant.objects.all()
+    serializer_class = ProductVariantSerializer
+    permission_classes = [IsAuthenticated, IsAdmin]
+
+
+    def create(self, request, *args, **kwargs):
+        # Custom response for successful creation
+        response = super().create(request, *args, **kwargs)
+        
+        return Response(
+            {
+                "message": "Variant created successfully!",
+                "data": response.data,
+                
+            },
+            status=status.HTTP_201_CREATED,
+        )
+
+    def update(self, request, *args, **kwargs):
+        # Custom response for successful update
+        response = super().update(request, *args, **kwargs)
+        
+        return Response(
+            {
+                "message": "Variant updated successfully!",
+                "data": response.data,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+    def destroy(self, request, *args, **kwargs):
+        # Custom response for successful deletion
+        super().destroy(request, *args, **kwargs)
+        return Response(
+            {
+                "message": "Variant deleted successfully!",
+            },
+            status=status.HTTP_204_NO_CONTENT,
+        )
+
+
+
+#=========================================================Product Variant end==========================
+#=========================================================================================================
+#=========================================================================================================
+# =================================================== Creating Products =================================
+
+class ProductViewSet(viewsets.ModelViewSet):
+    queryset = Product.objects.all()
+    serializer_class = ProductSerializer
+    permission_classes = [IsAuthenticated,IsAdmin]
+
+    def create(self, request, *args, **kwargs):
+        # Custom response for successful creation
+        response = super().create(request, *args, **kwargs)
+        
+        return Response(
+            {
+                "message": "Product created successfully!",
+                "data": response.data,
+                
+            },
+            status=status.HTTP_201_CREATED,
+        )
+
+    def update(self, request, *args, **kwargs):
+        # Custom response for successful update
+        response = super().update(request, *args, **kwargs)
+        
+        return Response(
+            {
+                "message": "Product updated successfully!",
+                "data": response.data,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+    def destroy(self, request, *args, **kwargs):
+        # Custom response for successful deletion
+        super().destroy(request, *args, **kwargs)
+        return Response(
+            {
+                "message": "Product deleted successfully!",
+            },
+            status=status.HTTP_204_NO_CONTENT,
+        )
+
+
+
+
+
+# =================================================== Creating Products =================================
+
+
 #=========================================================================================================
 #=========================================================================================================
