@@ -73,7 +73,11 @@ SWAGGER_SETTINGS = {
     },
 }
 
-
+CORS_ALLOWED_ORIGINS = [
+   
+    "http://localhost:3000",
+    "http://127.0.0.1:8000",
+]
 
 ROOT_URLCONF = 'Neo_tokyo.urls'
 
@@ -225,3 +229,7 @@ SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = "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" # Googl
 SOCIAL_AUTH_GOOGLE_OAUTH2_SCOPE = ['email', 'profile']    # Permissions to request
 # Redirect URI (same as you set in the Google Console)
 SOCIAL_AUTH_GOOGLE_OAUTH2_REDIRECT_URI = 'http://localhost:8000/auth/google/callback/'
+
+
+RAZOR_KEY_ID = "rzp_test_9tCOZuKLhiZdaM"
+RAZOR_KEY_SECRET = "IfMivqkfXWvuJi2IR10W4bzN"

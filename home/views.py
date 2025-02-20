@@ -67,10 +67,6 @@ class IsAdmin(permissions.BasePermission):
 
 
 
-
-
-
-
 # google login 
 
 from django.shortcuts import redirect

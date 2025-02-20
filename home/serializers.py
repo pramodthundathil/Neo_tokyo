@@ -19,3 +19,26 @@ class CustomUserSerializer(serializers.ModelSerializer):
         user.set_password(password)
         user.save()
         return user
+
+
+from .models import DeliveryAddress
+
+class DeliveryAddressSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DeliveryAddress
+        fields = "__all__"  # Includes all fields
+        read_only_fields = ["user"]  # User should be automatically assigned in views
+
+    def create(self, validated_data):
+        # Ensure only one primary address per user
+        if validated_data.get("is_primary", False):
+            DeliveryAddress.objects.filter(user=self.context["request"].user, is_primary=True).update(is_primary=False)
+        
+        return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        # Ensure only one primary address per user
+        if validated_data.get("is_primary", False):
+            DeliveryAddress.objects.filter(user=instance.user, is_primary=True).exclude(id=instance.id).update(is_primary=False)
+        
+        return super().update(instance, validated_data)

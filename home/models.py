@@ -53,8 +53,6 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
                             )
     
     date_joined = models.DateTimeField(auto_now_add=True, verbose_name='date joined')
-   
-
     objects = CustomUserManager()
 
     USERNAME_FIELD = 'email'
@@ -69,3 +67,23 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     def __str__(self):
         return str(self.first_name + " " + self.last_name)
 
+
+class DeliveryAddress(models.Model):
+
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="delivery_address")
+    delivery_person_name = models.CharField(max_length=255)
+    phone_number = models.CharField(max_length=20)
+    district = models.CharField(max_length=20)
+    state = models.CharField(max_length=20)
+    country = models.CharField(max_length=20)
+    zip_code = models.CharField(max_length=10)
+    address = models.TextField(verbose_name='address')
+    is_primary = models.BooleanField(default=False)
+
+    def save(self, *args, **kwargs):
+        if self.is_primary:
+            DeliveryAddress.objects.filter(user=self.user, is_primary=True).update(is_primary=False)
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{(self.user.first_name)} - Delivery Address {self.delivery_person_name}"
