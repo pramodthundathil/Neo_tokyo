@@ -1,4 +1,45 @@
 from rest_framework.decorators import api_view, permission_classes
+
+
+# This module provides views for managing cart operations, order creation, and payment processing 
+# in an e-commerce backend. It includes functionalities for authenticated and session-based users.
+# Functions:
+# ----------
+# - add_to_cart(request):
+#     Add an item to the cart. Authenticated users have personalized carts, while unauthenticated 
+#     users use session-based carts.
+# - cart_detail(request):
+# - remove_from_cart(request):
+#     Remove an item from the cart. Handles both authenticated and session-based carts.
+# Classes:
+# --------
+# - IncreaseCartItemQuantityView(APIView):
+#     Increase the quantity of a specific item in the cart.
+# - DecreaseCartItemQuantityView(APIView):
+#     Decrease the quantity of a specific item in the cart. If the quantity becomes zero, the item 
+#     is removed from the cart.
+# - CreateSingleProductOrderView(APIView):
+#     Create an order for a single product. Validates stock availability and calculates total price, 
+#     tax, and discounts. Integrates with Razorpay for payment processing.
+# - PaymentCallbackView(APIView):
+#     Handle Razorpay payment callback. Verifies payment signature and updates the order's payment 
+#     and order status.
+# - create_cart_order(request):
+#     Create an order for all items in the user's cart. Validates stock availability for all items, 
+#     calculates totals, and integrates with Razorpay for payment processing.
+# Notes:
+# ------
+# - The module uses Django REST Framework (DRF) for API views and serializers.
+# - Razorpay is used for payment integration.
+# - The `DeliveryAddress` model is used to associate orders with a delivery address.
+# - The `Cart`, `CartItem`, `Product`, `Order`, and `OrderItem` models are used to manage cart 
+#   and order data.
+# TODO:
+# -----
+# - Add functionality for handling product reviews and ratings.
+
+
+
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework import status
@@ -360,3 +401,16 @@ class PaymentCallbackView(APIView):
 
         except Order.DoesNotExist:
             return Response({"error": "Order not found"}, status=status.HTTP_404_NOT_FOUND)
+
+
+
+
+
+
+### Reviews and rating Added 
+
+
+###----------------------------------------------------------------###----------------------------------------------------------------###----------------------------------------------------------------
+###----------------------------------------------------------------###----------------------------------------------------------------###----------------------------------------------------------------
+###----------------------------------------------------------------###----------------------------------------------------------------###----------------------------------------------------------------
+###----------------------------------------------------------------###----------------------------------------------------------------###----------------------------------------------------------------
