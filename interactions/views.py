@@ -1,7 +1,7 @@
 from rest_framework import viewsets, permissions, status, generics, filters
 from rest_framework.response import Response
 from rest_framework.decorators import action
-from django_filters.rest_framework import DjangoFilterBackend
+# from django_filters.rest_framework import DjangoFilterBackend
 from inventory.models import  Product
 from .models import Review
 from .serializers import ReviewSerializer, ProductReviewSerializer
@@ -17,7 +17,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
     queryset = Review.objects.all()
     serializer_class = ReviewSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly, IsOwnerOrReadOnly]
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filter_backends = [ filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['product', 'rating', 'is_verified_purchase', 'is_approved']
     search_fields = ['title', 'comment']
     ordering_fields = ['created_at', 'rating']
