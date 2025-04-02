@@ -106,7 +106,60 @@ def create_user(backend, user, response, *args, **kwargs):
 
 
 
+# Google Authentication callback class 
+from google.auth.transport import requests
+from google.oauth2 import id_token
+
 User = get_user_model()
+
+class GoogleAuthView(APIView):
+    def post(self, request):
+        token = request.data.get("token")
+        if not token:
+            return Response({"error": "Token is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            # Verify token with Google
+            google_info = id_token.verify_oauth2_token(token, requests.Request())
+
+            if 'email' not in google_info:
+                return Response({"error": "Invalid Google token"}, status=status.HTTP_400_BAD_REQUEST)
+
+            email = google_info["email"]
+            google_id = google_info["sub"]
+            name = google_info.get("name", "")
+            profile_picture = google_info.get("picture", "")
+
+            user, created = User.objects.get_or_create(email=email, defaults={
+                "email": email,
+                'first_name':name,
+                "google_id": google_id,
+                "profile_picture": profile_picture,
+                "is_google_authenticated": True,
+            })
+
+            if not created:
+                user.google_id = google_id
+                user.profile_picture = profile_picture
+                user.is_google_authenticated = True
+                user.save()
+
+            # Generate JWT token
+            refresh = RefreshToken.for_user(user)
+            return Response({
+                "access": str(refresh.access_token),
+                "refresh": str(refresh),
+                "user": {
+                    "id": user.id,
+                    "email": user.email,
+                    "name": user.username,
+                    "profile_picture": user.profile_picture
+                }
+            }, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
 
 @api_view(['GET'])
 def google_callback(request):

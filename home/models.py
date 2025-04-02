@@ -26,8 +26,13 @@ class CustomUserManager(BaseUserManager):
 
 class CustomUser(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(unique=True, verbose_name='email address')
-    first_name = models.CharField(max_length=30, blank=True, verbose_name='first name')
-    last_name = models.CharField(max_length=30, blank=True, verbose_name='last name')
+    first_name = models.CharField(max_length=30, null=True, blank=True, verbose_name='first name')
+    last_name = models.CharField(max_length=30, null=True, blank=True, verbose_name='last name')
+
+    profile_picture = models.FileField(upload_to="profile_pic", null=True, blank=True)
+    google_id = models.CharField(max_length=100, null=True, blank=True)
+    is_google_authenticated = models.BooleanField(default=False)
+    
     phone_number = models.CharField(
         max_length=15,
         blank=True,
@@ -36,10 +41,10 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
         verbose_name='phone number'
     )
     date_of_birth = models.DateField(auto_now_add=False, null=True, blank=True)
-    pin_code = models.BigIntegerField(default=1)
-    age = models.CharField(max_length=20)
-    district = models.CharField(max_length=20)
-    state = models.CharField(max_length=20)
+    pin_code = models.BigIntegerField(default=1, null=True, blank=True)
+    age = models.CharField(max_length=20, null=True, blank=True)
+    district = models.CharField(max_length=20, null=True, blank=True)
+    state = models.CharField(max_length=20, null=True, blank=True)
     address = models.TextField(blank=True, null=True, verbose_name='address')
     is_active = models.BooleanField(default=True, verbose_name='active')
     is_staff = models.BooleanField(default=False, verbose_name='staff status')
@@ -58,6 +63,8 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ["first_name","date_of_birth","district","state", "phone_number"]
+
+    
 
    
     class Meta:
