@@ -220,7 +220,8 @@ def verify_otp_and_login(request):
     refresh = RefreshToken.for_user(user)
     access = refresh.access_token
 
-    is_admin = user.is_superuser
+    is_admin = user.is_superuser,
+    role = user.role
     # Remove OTP from cache after successful verification
     cache.delete(f'otp_{identifier}')
 
@@ -230,7 +231,8 @@ def verify_otp_and_login(request):
             'refresh': str(refresh),
             'access': str(access),
             'message': 'Token Creation successful.',
-            'is_admin':is_admin
+            'is_admin':is_admin,
+            "role":role
         },
         status=status.HTTP_200_OK
     )
