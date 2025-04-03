@@ -399,14 +399,19 @@ class DeliveryAddressViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         """Return only addresses belonging to the current user"""
-        return DeliveryAddress.objects.filter(user=self.request.user)
+        print("Get Current User...................")
+        try:
+            return DeliveryAddress.objects.filter(user=self.request.user)
+        except Exception as e:
+            return DeliveryAddress.objects.none()
+            
 
     def perform_create(self, serializer):
         """Automatically assign the current user when creating an address"""
         serializer.save(user=self.request.user)
 
     @action(detail=False, methods=['get'])
-    def primary(self):
+    def primary(self, request):
         """Get the user's primary delivery address"""
         primary_address = self.get_queryset().filter(is_primary=True).first()
         if primary_address:
