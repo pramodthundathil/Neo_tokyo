@@ -280,7 +280,7 @@ class CreateSingleProductOrderView(APIView):
                 total_discount=(product.mrp - product.price) * quantity,
                 delivery_address = delivery_address
             )
-            order.save()
+            
 
             # Create OrderItem
             OrderItem.objects.create(
@@ -297,12 +297,13 @@ class CreateSingleProductOrderView(APIView):
             # Reduce stock
             product.stock -= quantity
             product.save()
-            order.save()
+            
             data = {
-                "amount": order.total_price * 100,
+                "amount": int(order.total_price * 100),
                 "currency": "INR",
                 "payment_capture": "1"
             }
+            
             raz_order = razorpay_client.order.create(data)
             order.payment_order_id = raz_order["id"]
             order.save()
@@ -386,7 +387,7 @@ def create_cart_order(request):
             # Clear cart
             cart_items.delete()
             data = {
-                "amount": int(order.total_price) * 100,
+                "amount": int(order.total_price * 100),
                 "currency": "INR",
                 "payment_capture": "1"
             }
