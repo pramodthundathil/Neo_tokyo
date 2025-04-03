@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Cart, CartItem
+from .models import Cart, CartItem, Order, OrderItem
 from inventory.models import Product, ProductImage
 from inventory.serializers import ProductImageSerializer
 
@@ -45,3 +45,66 @@ class CartSerializer(serializers.ModelSerializer):
         return sum(item.total_price for item in obj.items.all())
     
 
+
+
+class OrderItemSerializer(serializers.ModelSerializer):
+    product_name = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = OrderItem
+        fields = [
+            'id', 'product', 'product_name', 'quantity', 'price', 
+            'total_price', 'product_discount', 'total_tax', 'price_after_tax'
+        ]
+        read_only_fields = fields
+    
+    def get_product_name(self, obj):
+        return obj.product.name if obj.product else None
+
+class OrderDetailSerializer(serializers.ModelSerializer):
+    items = OrderItemSerializer(many=True, read_only=True)
+    user_name = serializers.SerializerMethodField()
+    delivery_address_details = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = Order
+        fields = [
+            'id', 'user', 'user_name', 'invoice_number', 'delivery_address',
+            'delivery_address_details', 'total_price', 'total_tax', 
+            'price_before_tax', 'total_discount', 'bill_discount', 
+            'product_discount', 'payment_status', 'order_status', 
+            'payment_order_id', 'created_at', 'updated_at', 'items'
+        ]
+        read_only_fields = fields
+    
+    def get_user_name(self, obj):
+        return f"{obj.user.first_name} {obj.user.last_name}" if obj.user else None
+    
+    def get_delivery_address_details(self, obj):
+        if not obj.delivery_address:
+            return None
+        
+        address = obj.delivery_address
+        return {
+            "delivery_person_name":address.delivery_person_name,
+            'phone_number': address.phone_number,
+            'district': address.district,
+            'state': address.state,
+            'postal_code': address.zip_code,
+            'address':address.address,
+            'country': address.country
+        }
+
+class OrderUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Order
+        fields = ['payment_status', 'order_status', 'bill_discount', 'delivery_address']
+    
+    def update(self, instance, validated_data):
+        instance = super().update(instance, validated_data)
+        
+        # Recalculate totals if bill discount is updated
+        if 'bill_discount' in validated_data:
+            instance.calculate_totals()
+        
+        return instance

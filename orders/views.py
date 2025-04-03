@@ -43,6 +43,9 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework import status
+from rest_framework import viewsets, permissions, status, filters
+
+from rest_framework.decorators import action
 
 import json
 from drf_yasg.utils import swagger_auto_schema
@@ -53,8 +56,9 @@ from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
 
 from .models import Cart, CartItem, Product,OrderItem, Order
-from .serializers import CartSerializer, CartItemSerializer
+from .serializers import CartSerializer, CartItemSerializer, OrderDetailSerializer, OrderUpdateSerializer
 from home.models import DeliveryAddress
+from home.views import IsAdmin
 
 
 @swagger_auto_schema(
@@ -303,7 +307,7 @@ class CreateSingleProductOrderView(APIView):
                 "currency": "INR",
                 "payment_capture": "1"
             }
-            
+
             raz_order = razorpay_client.order.create(data)
             order.payment_order_id = raz_order["id"]
             order.save()
@@ -448,7 +452,119 @@ class PaymentCallbackView(APIView):
 
 
 
-### Reviews and rating Added 
+
+
+### Order Handling....................
+
+
+class UserOrderViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    API endpoint for regular users to view their orders
+    """
+    serializer_class = OrderDetailSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    filterset_fields = ['payment_status', 'order_status', 'created_at']
+    search_fields = ['invoice_number']
+    ordering_fields = ['created_at', 'total_price']
+    
+    def get_queryset(self):
+        return Order.objects.filter(user=self.request.user).order_by('-created_at')
+    
+    @action(detail=True, methods=['post'])
+    def cancel(self, request, pk=None):
+        """
+        Cancel a pending order
+        """
+        order = self.get_object()
+        
+        # Only allow cancellation of PENDING orders
+        if order.order_status != 'PENDING':
+            return Response(
+                {"detail": "Cannot cancel an order that is not pending."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        order.order_status = 'FAILED'
+        order.save(update_fields=['order_status'])
+        
+        return Response({"status": "Order cancelled"})
+    
+    @action(detail=True, methods=['get'])
+    def items(self, request, pk=None):
+        """
+        Get all items for a specific order
+        """
+        order = self.get_object()
+        items = order.items.all()
+        from .serializers import OrderItemSerializer
+        serializer = OrderItemSerializer(items, many=True)
+        return Response(serializer.data)
+
+class AdminOrderViewSet(viewsets.ModelViewSet):
+    """
+    API endpoint for admins to manage all orders
+    """
+    queryset = Order.objects.all().order_by('-created_at')
+    
+    permission_classes = [IsAuthenticated, IsAdmin]
+    ordering_fields = ['created_at', 'total_price', 'payment_status', 'order_status']
+    
+    def get_serializer_class(self):
+        if self.action in ['update', 'partial_update']:
+            return OrderUpdateSerializer
+        return OrderDetailSerializer
+    
+    @action(detail=True, methods=['post'])
+    def update_status(self, request, pk=None):
+        """
+        Update order status and payment status
+        """
+        order = self.get_object()
+        
+        # Get status from request
+        order_status = request.data.get('order_status')
+        payment_status = request.data.get('payment_status')
+        
+        if order_status:
+            order.order_status = order_status
+        
+        if payment_status:
+            order.payment_status = payment_status
+        
+        order.save(update_fields=['order_status', 'payment_status'])
+        
+        serializer = self.get_serializer(order)
+        return Response(serializer.data)
+    
+    @action(detail=True, methods=['post'])
+    def apply_discount(self, request, pk=None):
+        """
+        Apply bill discount to an order
+        """
+        order = self.get_object()
+        
+        # Get discount from request
+        discount = request.data.get('bill_discount')
+        
+        if discount is not None:
+            order.bill_discount = discount
+            order.save(update_fields=['bill_discount'])
+            order.calculate_totals()  # Recalculate totals
+        
+        serializer = self.get_serializer(order)
+        return Response(serializer.data)
+    
+    @action(detail=True, methods=['get'])
+    def items(self, request, pk=None):
+        """
+        Get all items for a specific order
+        """
+        order = self.get_object()
+        items = order.items.all()
+        from .serializers import OrderItemSerializer
+        serializer = OrderItemSerializer(items, many=True)
+        return Response(serializer.data)
+
 
 
 ###----------------------------------------------------------------###----------------------------------------------------------------###----------------------------------------------------------------

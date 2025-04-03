@@ -1,5 +1,11 @@
 from django.urls import path 
 from .import views 
+from rest_framework.routers import DefaultRouter
+
+
+router = DefaultRouter()
+
+
 
 
 urlpatterns = [
@@ -14,3 +20,7 @@ urlpatterns = [
     path('order/cart/', views.create_cart_order, name='create-cart-order'),
     path('payment/callback/', views.PaymentCallbackView.as_view(), name='payment-callback'),
 ]
+router.register('user/orders', views.UserOrderViewSet, basename='user-order')
+router.register('admin/orders', views.AdminOrderViewSet, basename='admin-order')
+
+urlpatterns += router.urls
