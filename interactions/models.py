@@ -3,6 +3,7 @@ from django.contrib.auth import get_user_model
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db.models import Avg
 from inventory.models import Product
+from django.utils.crypto import get_random_string
 
 User = get_user_model()
 
@@ -79,3 +80,36 @@ class ProductRatingSummary(models.Model):
     
     def __str__(self):
         return f"Rating summary for {self.product.name}: {self.average_rating}/5"
+
+
+class GrievanceTicket(models.Model):
+    date_created = models.DateTimeField(auto_now_add=True)
+    date_updated = models.DateTimeField(auto_now=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='tickets')
+    product = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True, blank=True, related_name='grivience_on_product')
+    product_serial_number = models.CharField(max_length=100, null=True, blank=True)
+    grievance =  models.TextField()
+    conclusion = models.TextField(null=True, blank=True)
+    ticket_id = models.CharField(max_length=100)
+    is_concluded = models.BooleanField(default=False)
+
+    def generate_unique_ticket_id():
+        while True:
+            ticket_id = get_random_string(length=10, allowed_chars='0123456789')
+            if not GrievanceTicket.objects.filter(ticket_id=ticket_id).exists():
+                return ticket_id
+
+    def save(self, *args, **kwargs):
+        if not self.ticket_id:
+            self.ticket_id = self.generate_unique_ticket_id()
+        super().save(*args, **kwargs)
+
+    
+    def __str__(self):
+        """Generate a string with user details for the grievance ticket."""
+        user_info = f"User: {self.user.username} (ID: {self.user.id})"
+        product_info = f"Product: {self.product.name if self.product else 'N/A'}"
+        serial_info = f"Serial Number: {self.product_serial_number if self.product_serial_number else 'N/A'}"
+
+        return f"{user_info}, {product_info}, {serial_info}"
+

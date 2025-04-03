@@ -3,8 +3,8 @@ from rest_framework.response import Response
 from rest_framework.decorators import action
 # from django_filters.rest_framework import DjangoFilterBackend
 from inventory.models import  Product
-from .models import Review
-from .serializers import ReviewSerializer, ProductReviewSerializer
+from .models import Review, GrievanceTicket
+from .serializers import ReviewSerializer, ProductReviewSerializer, GrievanceTicketAdminSerializer, GrievanceTicketSerializer
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from home.views import IsAdmin 
 from .permissions import IsOwnerOrReadOnly
@@ -195,5 +195,81 @@ def get_product_reviews(request):
 
 
 
+
+# Tickets handling 
+
+class UserTicketViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for standard users to manage their grievance tickets.
+    """
+    serializer_class = GrievanceTicketSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        # Users can only see their own tickets
+        return GrievanceTicket.objects.filter(user=self.request.user)
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+    
+    @action(detail=True, methods=['post'])
+    def reopen(self, request, pk=None):
+        """
+        Action to reopen a concluded ticket
+        """
+        ticket = self.get_object()
+        if not ticket.is_concluded:
+            return Response(
+                {"error": "Ticket is not concluded and cannot be reopened."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        ticket.is_concluded = False
+        ticket.save()
+        serializer = self.get_serializer(ticket)
+        return Response(serializer.data)
+
+class AdminTicketViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for admin users to manage all grievance tickets.
+    """
+    queryset = GrievanceTicket.objects.all()
+    permission_classes = [IsAuthenticated,IsAdmin]
+    
+    def get_serializer_class(self):
+        if self.request.method in ['PUT', 'PATCH']:
+            return GrievanceTicketAdminSerializer
+        return GrievanceTicketSerializer
+    
+    @action(detail=True, methods=['post'])
+    def reopen(self, request, pk=None):
+        """
+        Action to reopen a concluded ticket
+        """
+        ticket = self.get_object()
+        if not ticket.is_concluded:
+            return Response(
+                {"error": "Ticket is not concluded and cannot be reopened."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        ticket.is_concluded = False
+        ticket.save()
+        serializer = self.get_serializer(ticket)
+        return Response(serializer.data)
+    
+
+class ConcludeTicketView(generics.UpdateAPIView):
+    """
+    View to handle admin-only conclusion updates
+    """
+    queryset = GrievanceTicket.objects.all()
+    serializer_class = GrievanceTicketAdminSerializer
+    permission_classes = [IsAuthenticated,IsAdmin]
+    lookup_field = 'ticket_id'
 
 

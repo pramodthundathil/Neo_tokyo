@@ -81,3 +81,27 @@ class ProductReviewSerializer(serializers.ModelSerializer):
         model = Product
         fields = ['id', 'name', 'rating_summary', 'reviews']
         read_only_fields = ['id', 'name', 'rating_summary', 'reviews']
+
+
+
+from .models import GrievanceTicket
+
+class GrievanceTicketSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = GrievanceTicket
+        fields = ['id', 'date_created', 'date_updated', 'product', 'product_serial_number', 
+                 'grievance', 'conclusion', 'ticket_id',"is_concluded"]
+        read_only_fields = ['id', 'date_created', 'date_updated', 'ticket_id', 'user',"conclusion"]
+
+    def create(self, validated_data):
+        # Automatically set the user to the currently authenticated user
+        validated_data['user'] = self.context['request'].user
+        return super().create(validated_data)
+
+class GrievanceTicketAdminSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = GrievanceTicket
+        fields = ['id', 'date_created', 'date_updated', 'user', 'product', 'product_serial_number',
+                 'grievance', 'conclusion', 'ticket_id',"is_concluded"]
+        read_only_fields = ['id', 'date_created', 'date_updated', 'ticket_id', 'user',
+                           'product', 'product_serial_number', 'grievance']
