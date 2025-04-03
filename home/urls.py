@@ -1,7 +1,9 @@
 
 from django.urls import path, include
 from .import views, views_testing
+from rest_framework.routers import DefaultRouter
 
+router = DefaultRouter()
 urlpatterns = [
     
     path("demodata",views.demodata, name="demodata"),
@@ -19,3 +21,7 @@ urlpatterns = [
 
     path("",views_testing.signin,name="signin")
 ]
+
+router.register(r'delivery-addresses', views.DeliveryAddressViewSet, basename='delivery-address')
+urlpatterns +=router.urls
+

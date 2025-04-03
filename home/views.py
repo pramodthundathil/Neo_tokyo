@@ -32,6 +32,14 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import get_user_model
 
 
+from rest_framework import viewsets, status, permissions
+from rest_framework.response import Response
+from rest_framework.decorators import action
+
+
+from .models import DeliveryAddress
+from .serializers import DeliveryAddressSerializer
+
 #swagger authentication
 
 from rest_framework.permissions import BasePermission
@@ -382,3 +390,35 @@ def demodata(request):
     return Response(data)
 
 
+class DeliveryAddressViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for managing delivery addresses for authenticated users.
+    """
+    serializer_class = DeliveryAddressSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        """Return only addresses belonging to the current user"""
+        return DeliveryAddress.objects.filter(user=self.request.user)
+
+    def perform_create(self, serializer):
+        """Automatically assign the current user when creating an address"""
+        serializer.save(user=self.request.user)
+
+    @action(detail=False, methods=['get'])
+    def primary(self):
+        """Get the user's primary delivery address"""
+        primary_address = self.get_queryset().filter(is_primary=True).first()
+        if primary_address:
+            serializer = self.get_serializer(primary_address)
+            return Response(serializer.data)
+        return Response({"detail": "No primary address found."}, status=status.HTTP_404_NOT_FOUND)
+    
+    @action(detail=True, methods=['post'])
+    def set_primary(self, request, pk=None):
+        """Set an address as the primary delivery address"""
+        address = self.get_object()
+        address.is_primary = True
+        address.save()  # The save method will handle updating other addresses
+        serializer = self.get_serializer(address)
+        return Response(serializer.data)
