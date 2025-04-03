@@ -13,7 +13,7 @@ from home import views
 schema_view = get_schema_view(
     openapi.Info(
         title='API Documentation NEO TOKYO',
-        default_version='v1',
+        default_version='v2',
         description="API for managing NEO TOKYO in the system",
     ),
     public=True,  # Set public to True for public access

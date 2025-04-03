@@ -133,6 +133,26 @@ def cart_detail(request):
 @api_view(['POST'])
 @permission_classes([IsAuthenticatedOrReadOnly])
 def remove_from_cart(request):
+    """
+    Handles the removal of an item from the user's cart.
+    This function checks if the user is authenticated. If authenticated, it retrieves the cart associated
+    with the user. If not authenticated, it retrieves the cart associated with the session key. The function
+    then attempts to remove the specified item from the cart.
+    Parameters:
+        request (HttpRequest): The HTTP request object containing user authentication and data payload.
+    Returns:
+        Response: A JSON response containing:
+            - "data": Serialized cart data after the operation.
+            - "message": Success message if the item is removed.
+            - "error": Error message if the item is not found or the cart is empty.
+            - HTTP Status Codes:
+                - 200 OK: If the item is successfully removed.
+                - 404 NOT FOUND: If the cart is empty or the item is not found.
+            item_id = ('item_id') is the parameter to remove
+                
+    """
+
+
     item_id = request.data.get('item_id')
     cart_item = CartItem.objects.filter(id=item_id).first()
 

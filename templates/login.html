@@ -46,7 +46,7 @@
               <form class="pt-3" method="POST">
                 {% csrf_token %}
                 <div class="form-group">
-                  <input type="email" name="uname"  class="form-control form-control-lg" id="exampleInputEmail1"
+                  <input type="email" name="uname" class="form-control form-control-lg" id="exampleInputEmail1"
                     placeholder="Username">
                 </div>
                 <div class="form-group">
@@ -56,6 +56,23 @@
                 <div class="mt-3">
                   <button class="btn btn-block btn-primary btn-lg font-weight-medium auth-form-btn" type="submit">SIGN
                     IN</button>
+                </div>
+
+                <div class="my-3 text-center">
+                  <span class="font-weight-light">OR</span>
+                </div>
+
+                <div class="mb-2">
+                  <div class="mb-3">
+                    <div id="google-signin-button" class="w-100"></div>
+                  </div>
+                  <div class="g_id_signin" data-type="standard" data-size="large" data-theme="outline"
+                    data-text="sign_in_with" data-shape="rectangular" data-logo_alignment="center" data-width="100%">
+                  </div>
+                </div>
+
+                <div class="text-center mt-4 font-weight-light">
+                  Don't have an account? <a href="#" id="create-account" class="text-primary">Create</a>
                 </div>
                 <!-- <div class="my-2 d-flex justify-content-between align-items-center">
                   <div class="form-check">
@@ -114,6 +131,86 @@
       });
     });
   </script>
+
+
+
+ <!-- Place this where you want the Google Sign-In button to appear -->
+
+
+<!-- Add this script at the end of your body -->
+<script src="https://accounts.google.com/gsi/client" async></script>
+<script>
+  // Wait for the Google Identity Services to load
+  window.addEventListener('load', function() {
+    // Give a little time for GSI client to initialize
+    setTimeout(function() {
+      // Initialize Google Identity API
+      console.log("Authentication started....")
+      google.accounts.id.initialize({
+        client_id: '752728323430-85geretfsn5f7ino654hcqolnrm955c3.apps.googleusercontent.com', // Replace with your actual client ID
+        callback: handleGoogleSignIn,
+        auto_select: false,
+        cancel_on_tap_outside: true
+      });
+      console.log("Call back complete")
+      
+      // Render the button
+      google.accounts.id.renderButton(
+        document.getElementById('google-signin-button'),
+        { 
+          type: 'standard',
+          theme: 'outline', 
+          size: 'large',
+          text: 'signin_with',
+          shape: 'rectangular',
+          logo_alignment: 'center',
+          width: '100%'
+        }
+      );
+    }, 100);
+  });
+
+  // Callback function when user signs in
+  function handleGoogleSignIn(response) {
+    if (response.credential) {
+      console.log("handle started...................")
+      // Send the token to your backend
+      fetch('https://neotokyo.pythonanywhere.com/authentication/auth/google/', { // Update with your actual endpoint
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        body: JSON.stringify({ token: response.credential })
+      })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        return response.json();
+      })
+      .then(data => {
+        if (data.access) {
+          // Store tokens
+          localStorage.setItem('access_token', data.access);
+          localStorage.setItem('refresh_token', data.refresh);
+          
+          // Redirect to dashboard
+          window.location.href = '/dashboard/'; // Update with your actual URL
+        } else {
+          // Handle error
+          console.error('Authentication error:', data.error);
+          alert('Authentication failed: ' + (data.error || 'Unknown error'));
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred during authentication. Please try again.');
+      });
+    }
+  }
+</script>
+
 </body>
 
 </html>
