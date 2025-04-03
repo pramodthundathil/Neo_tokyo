@@ -2,6 +2,9 @@ from django.db import models
 from django.conf import settings
 from home.models import CustomUser, DeliveryAddress
 from inventory.models import Product
+import random
+import string
+from decimal import Decimal
 
 class Cart(models.Model):
     user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, null=True, blank=True)
@@ -66,19 +69,37 @@ class Order(models.Model):
     payment_order_id = models.CharField(max_length=100, null=True, blank=True)
     def save(self, *args, **kwargs):
         # Fetch all related order items
-        order_items = self.items.all()
+        if not self.invoice_number:
+            if not self.invoice_number:
+                self.invoice_number = ''.join(random.choices(string.digits, k=random.randint(5, 10)))
 
-        # Aggregate values from order items
-        self.total_price = sum(item.price_after_tax for item in order_items)
-        self.total_tax = sum(item.total_tax for item in order_items)
-        self.price_before_tax = sum(item.total_price for item in order_items)
-        self.product_discount = sum(item.product_discount for item in order_items)
-
-        # Apply bill discount (if any)
-        self.total_discount = self.product_discount + self.bill_discount
-        self.total_price -= self.bill_discount  # Reduce the total price by the bill discount
-
+        is_new = self.pk is None
         super(Order, self).save(*args, **kwargs)
+
+
+    
+    def calculate_totals(self):
+        """Calculate and update order totals from order items"""
+        order_items = self.items.all()
+        if order_items.exists():
+            self.total_price = sum(item.price_after_tax for item in order_items) or Decimal('0.00')
+            self.total_tax = sum(item.total_tax for item in order_items) or Decimal('0.00')
+            self.price_before_tax = sum(item.total_price for item in order_items) or Decimal('0.00')
+            self.product_discount = sum(item.product_discount for item in order_items) or Decimal('0.00')
+
+            # Apply bill discount (if any)
+            self.total_discount = Decimal(self.product_discount) + Decimal(self.bill_discount)
+            self.total_price =  Decimal(self.total_price) - Decimal(self.bill_discount)
+
+            # Save the updated totals
+            self.save(update_fields=[
+                'total_price', 'total_tax', 'price_before_tax',
+                'product_discount', 'total_discount', 'bill_discount'
+            ])
+        
+        
+
+    
 
     def __str__(self):
 
@@ -98,15 +119,15 @@ class OrderItem(models.Model):
 
 
     def save(self, *args, **kwargs):
-        # Calculate total price for the quantity
-        self.total_price = self.price * self.quantity
+        # Ensure Decimal calculations are properly handled
+        self.total_price = Decimal(self.price) * Decimal(self.quantity)
 
         # Calculate product discount per unit and multiply by quantity
-        product_discount_per_unit = self.product.mrp - self.price
-        self.product_discount = product_discount_per_unit * self.quantity
+        product_discount_per_unit = Decimal(self.product.mrp) - Decimal(self.price)
+        self.product_discount = product_discount_per_unit * Decimal(self.quantity)
 
         # Calculate tax per product and multiply by quantity
-        self.total_tax = self.product.tax_amount * self.quantity
+        self.total_tax = Decimal(self.product.tax_amount) * Decimal(self.quantity)
 
         # Calculate price after tax
         self.price_after_tax = self.total_price + self.total_tax

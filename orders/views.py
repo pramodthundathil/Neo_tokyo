@@ -280,6 +280,7 @@ class CreateSingleProductOrderView(APIView):
                 total_discount=(product.mrp - product.price) * quantity,
                 delivery_address = delivery_address
             )
+            order.save()
 
             # Create OrderItem
             OrderItem.objects.create(
@@ -318,7 +319,8 @@ class CreateSingleProductOrderView(APIView):
 def create_cart_order(request):
     user = request.user
     delivery_address_id = request.data.get("delivery_address_id")
-
+     # Import Decimal for consistent calculations
+    from decimal import Decimal
     try:
         cart = get_object_or_404(Cart, user=user)
         cart_items = cart.items.all()
@@ -348,37 +350,43 @@ def create_cart_order(request):
             # total_discount = sum((item.product.mrp - item.product.price) * item.quantity for item in cart_items)
 
             # Create the order
+            # Create the order with initial values
             order = Order.objects.create(
                 user=user,
-                total_price=0,
-                total_tax=0,
-                price_before_tax=0 ,
-                total_discount=0,
-                delivery_address = delivery_address
+                delivery_address=delivery_address
             )
-            order.save()
-
             # Create order items and update product stock
             for item in cart_items:
+                # Ensure all calculations use Decimal type
+                product_price = Decimal(str(item.price))
+                product_mrp = Decimal(str(item.product.mrp))
+                product_tax = Decimal(str(item.product.tax_amount))
+                quantity = Decimal(str(item.quantity))
+                
                 OrderItem.objects.create(
                     order=order,
                     product=item.product,
-                    quantity=item.quantity,
-                    price=item.price,
-                    total_price=item.quantity * item.price,
-                    product_discount=(item.product.mrp - item.product.price) * item.quantity,
-                    total_tax=item.product.tax_amount * item.quantity,
-                    price_after_tax=(item.price + item.product.tax_amount) * item.quantity
+                    quantity=int(quantity),  # Keep quantity as integer for DB
+                    price=product_price,
+                    total_price=product_price * quantity,
+                    product_discount=(product_mrp - product_price) * quantity,
+                    total_tax=product_tax * quantity,
+                    price_after_tax=(product_price + product_tax) * quantity
                 )
 
                 # Reduce product stock
                 item.product.stock -= item.quantity
                 item.product.save()
 
+           # Calculate order totals after all order items are created
+            order.calculate_totals()
+            
+
+
             # Clear cart
             cart_items.delete()
             data = {
-                "amount": order.total_price * 100,
+                "amount": int(order.total_price) * 100,
                 "currency": "INR",
                 "payment_capture": "1"
             }
