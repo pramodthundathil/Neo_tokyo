@@ -206,7 +206,7 @@ class IncreaseCartItemQuantityView(APIView):
             return Response({"error": "Product not found"}, status=status.HTTP_404_NOT_FOUND)
         
 
-        
+
 class DecreaseCartItemQuantityView(APIView):
     def post(self, request, cart_id, product_id):
         try:
@@ -306,7 +306,7 @@ class CreateSingleProductOrderView(APIView):
             order.payment_order_id = raz_order["id"]
             order.save()
 
-            return Response({"order_id": order.id, "total_price": total_price}, status=status.HTTP_201_CREATED)
+            return Response({"order_id": order.id, "total_price": order.total_price,"raz_order_id": raz_order["id"], "amount": order.total_price * 100, "key": settings.RAZOR_KEY_ID}, status=status.HTTP_201_CREATED)
         except Product.DoesNotExist:
             return Response({"error": "Product not found"}, status=status.HTTP_404_NOT_FOUND)
 
@@ -385,8 +385,8 @@ def create_cart_order(request):
             raz_order = razorpay_client.order.create(data)
             order.payment_order_id = raz_order["id"]
             order.save()
-
-        return Response({"order_id": order.id, "total_price": order.total_price}, status=status.HTTP_201_CREATED)
+        
+        return Response({"order_id": order.id, "total_price": order.total_price,"raz_order_id": raz_order["id"], "amount": order.total_price * 100, "key": settings.RAZOR_KEY_ID}, status=status.HTTP_201_CREATED)
 
     except Cart.DoesNotExist:
         return Response({"error": "Cart not found"}, status=status.HTTP_404_NOT_FOUND)
