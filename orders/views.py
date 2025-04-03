@@ -130,6 +130,8 @@ def cart_detail(request):
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 
+
+
 @api_view(['POST'])
 @permission_classes([IsAuthenticatedOrReadOnly])
 def remove_from_cart(request):
@@ -151,7 +153,7 @@ def remove_from_cart(request):
             item_id = ('item_id') is the parameter to remove
                 
     """
-
+   
 
     item_id = request.data.get('item_id')
     cart_item = CartItem.objects.filter(id=item_id).first()
@@ -178,23 +180,33 @@ class IncreaseCartItemQuantityView(APIView):
         try:
             cart = Cart.objects.get(id=cart_id)
             product = Product.objects.get(id=product_id)
-            cart_item, created = CartItem.objects.get_or_create(cart=cart, product=product)
-
-            if not created:
+            
+            # First check if the item exists
+            try:
+                cart_item = CartItem.objects.get(cart=cart, product=product)
                 cart_item.quantity += 1
                 cart_item.save()
-                cartserializer = CartSerializer(instance = cart)
-
-            else:
-                cart_item.price = product.price  # Assuming price comes from the Product model
-                cart_item.save()
-
+            except CartItem.DoesNotExist:
+                # Create new cart item with price set
+                cart_item = CartItem.objects.create(
+                    cart=cart,
+                    product=product,
+                    quantity=1,
+                    price=product.price
+                )
+            
+            # Serialize the cart after modifications
+            cartserializer = CartSerializer(instance=cart)
+            
             return Response(cartserializer.data, status=status.HTTP_200_OK)
+            
         except Cart.DoesNotExist:
             return Response({"error": "Cart not found"}, status=status.HTTP_404_NOT_FOUND)
         except Product.DoesNotExist:
             return Response({"error": "Product not found"}, status=status.HTTP_404_NOT_FOUND)
+        
 
+        
 class DecreaseCartItemQuantityView(APIView):
     def post(self, request, cart_id, product_id):
         try:
