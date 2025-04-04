@@ -34,19 +34,22 @@ from rest_framework.decorators import api_view, permission_classes
 # - The `DeliveryAddress` model is used to associate orders with a delivery address.
 # - The `Cart`, `CartItem`, `Product`, `Order`, and `OrderItem` models are used to manage cart 
 #   and order data.
+# - Add functionality for handling product reviews and ratings.
+# - Add functionality for order history and tracking.
 # TODO:
 # -----
-# - Add functionality for handling product reviews and ratings.
-
+# - Implement a function to apply discount codes to orders.
+# - Return an and refund policy for orders.
+# - Implement a function to handle order cancellations and returns.
+# - Add functionality for user notifications regarding order status updates.
+# - Implement delivery a partner
 
 
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework import status
-from rest_framework import viewsets, permissions, status, filters
-
+from rest_framework import viewsets, permissions, status, filters 
 from rest_framework.decorators import action
-
 import json
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
@@ -423,7 +426,7 @@ class PaymentCallbackView(APIView):
 
         # Validate required fields
         if not order_id or not payment_id or not signature:
-            return Response({"error": "Missing required payment details"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Missing required payment details","payment":False}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             order = Order.objects.get(payment_order_id=order_id)
@@ -432,7 +435,7 @@ class PaymentCallbackView(APIView):
             try:
                 razorpay_client.utility.verify_payment_signature(response_data)
             except razorpay.errors.SignatureVerificationError:
-                return Response({"error": "Invalid payment signature"}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({"error": "Invalid payment signature","payment":False}, status=status.HTTP_400_BAD_REQUEST)
 
             # Update order status based on Razorpay's response
             if payment_status == 'SUCCESS':
@@ -442,10 +445,10 @@ class PaymentCallbackView(APIView):
                 order.payment_status = 'FAILED'
 
             order.save()
-            return Response({"message": "Payment status updated"}, status=status.HTTP_200_OK)
+            return Response({"message": "Payment status updated","payment":True}, status=status.HTTP_200_OK)
 
         except Order.DoesNotExist:
-            return Response({"error": "Order not found"}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"error": "Order not found","payment":False}, status=status.HTTP_404_NOT_FOUND)
 
 
 
