@@ -76,6 +76,7 @@ urlpatterns = [
     path("category_add",views.category_add,name="category_add"),
     path("category_update/<int:pk>",views.category_update,name="category_update"),
     path("category_delete/<int:pk>",views.category_delete,name="category_delete"),
+    path("ProductAttributeCategoryListView",views.ProductAttributeCategoryListView.as_view(),name="ProductAttributeCategoryListView"),
 
     #=====================================================================================================
 

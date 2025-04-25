@@ -29,7 +29,8 @@ from .serializers import (
                     ProductAttributeValueSerializer,
                     AttributeValueDetail,
                     AttributeValueDetailSerializer,
-                    VariantRelationshipAttributeSerializer
+                    VariantRelationshipAttributeSerializer,
+                    ProductAttributeCategorySerializerForSort
 
                 )
 from .models import (Product,
@@ -413,6 +414,16 @@ def view_category(request):
     serializer = CategorySerializer(category, many = True)
     return Response(serializer.data,status=status.HTTP_200_OK )
 
+
+
+
+class ProductAttributeCategoryListView(APIView):
+    permission_classes = [IsAuthenticated, IsAdmin]
+    def get(self, request):
+        categories = ProductAttributeCategory.objects.prefetch_related('attributes').all()
+        serializer = ProductAttributeCategorySerializerForSort(categories, many=True)
+        return Response(serializer.data)
+    
 
 @swagger_auto_schema(methods=['get'],operation_description="Get a Single Instance categories")
 @api_view(['GET'])

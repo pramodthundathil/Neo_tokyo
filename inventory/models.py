@@ -148,6 +148,8 @@ class ProductAttribute(models.Model):
 
     def __str__(self):
         return f"{self.category.name} - {self.name}"
+    
+
 
 
 class ProductAttributeValue(models.Model):

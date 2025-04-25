@@ -49,6 +49,13 @@ class ProductAttributeSerializer(serializers.ModelSerializer):
         model = ProductAttribute
         fields = ['id', 'category', 'category_id', 'name']
 
+class ProductAttributeCategorySerializerForSort(serializers.ModelSerializer):
+    attributes = ProductAttributeSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = ProductAttributeCategory
+        fields = ['id', 'name', 'attributes']
+
 
 class AttributeValueDetailSerializer(serializers.ModelSerializer):
    
