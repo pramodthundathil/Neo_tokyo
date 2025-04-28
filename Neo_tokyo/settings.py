@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     'inventory',
     "orders",
     'interactions',
+    'neo_analytics',
 ]
 
 MIDDLEWARE = [
