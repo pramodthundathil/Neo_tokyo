@@ -49,17 +49,28 @@ class CartSerializer(serializers.ModelSerializer):
 
 class OrderItemSerializer(serializers.ModelSerializer):
     product_name = serializers.SerializerMethodField()
+    product_image = serializers.SerializerMethodField()
     
     class Meta:
         model = OrderItem
         fields = [
-            'id', 'product', 'product_name', 'quantity', 'price', 
+            'id', 'product', 'product_name', 'product_image', 'quantity', 'price', 
             'total_price', 'product_discount', 'total_tax', 'price_after_tax'
         ]
         read_only_fields = fields
     
     def get_product_name(self, obj):
         return obj.product.name if obj.product else None
+        
+    def get_product_image(self, obj):
+        if obj.product:
+            primary_image = obj.product.images.filter(is_primary=True).first()
+            if primary_image:
+                request = self.context.get('request')
+                if request:
+                    return request.build_absolute_uri(primary_image.image.url)
+                return primary_image.image.url
+        return None
 
 class OrderDetailSerializer(serializers.ModelSerializer):
     items = OrderItemSerializer(many=True, read_only=True)
