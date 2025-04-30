@@ -80,6 +80,7 @@ CORS_ALLOWED_ORIGINS = [
    
     "http://localhost:3000",
     "http://127.0.0.1:8000",
+    'https://neo-new-anazks-projects.vercel.app'
 ]
 
 ROOT_URLCONF = 'Neo_tokyo.urls'
