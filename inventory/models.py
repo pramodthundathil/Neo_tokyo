@@ -104,6 +104,17 @@ class Product(models.Model):
             order_number = f"{prefix}-{random_number}"
             if not Product.objects.filter(product_code=order_number).exists():
                 return order_number
+            
+    def get_approved_reviews(self):
+        """Returns only approved reviews for this product"""
+        return self.reviews.all()
+    
+    def get_rating_summary(self):
+        """Returns the rating summary for this product"""
+        try:
+            return self.rating_summary
+        except:
+            return None
 
     def __str__(self):
         return self.name + " " + str(self.brand)

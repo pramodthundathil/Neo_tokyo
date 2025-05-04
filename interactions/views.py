@@ -49,7 +49,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
 
 
 class ProductReviewsView(generics.RetrieveAPIView):
-    queryset = Review.objects.all()
+    queryset = Product.objects.all()
     serializer_class = ProductReviewSerializer
     permission_classes = [AllowAny]
 

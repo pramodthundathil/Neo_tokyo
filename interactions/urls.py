@@ -26,5 +26,6 @@ urlpatterns = [
 router = DefaultRouter()
 router.register(r'my-tickets', views.UserTicketViewSet, basename='user-tickets')
 router.register(r'admin/tickets', views.AdminTicketViewSet, basename='admin-tickets')
+# router.register(r'reviews/users', views.ReviewViewSet, basename='reviews')
 
 urlpatterns += router.urls
