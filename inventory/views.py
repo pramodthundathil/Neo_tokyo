@@ -693,7 +693,7 @@ class ProductAttributeValueViewSet(viewsets.ModelViewSet):
         return Response(
             {
                 "message": "Product Attribute Value  created successfully!",
-                "data": product_serializer.data,
+                "data": response.data,
                 
             },
             status=status.HTTP_201_CREATED,
@@ -709,7 +709,7 @@ class ProductAttributeValueViewSet(viewsets.ModelViewSet):
         return Response(
             {
                 "message": "Product Attribute Value   updated successfully!",
-                "data": product_serializer.data,
+                "data": response.data,
             },
             status=status.HTTP_200_OK,
         )
