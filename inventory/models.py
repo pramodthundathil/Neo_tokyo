@@ -1,5 +1,3 @@
-
-
 from django.db import models
 from decimal import Decimal
 import random
@@ -201,4 +199,122 @@ class ProductVariant(models.Model):
     def __str__(self):
         return f"{self.product} -> {self.variant_product} ({self.relationship_value})"
     
+
+
+    
+#pairing models best paired with 
+
+
+from django.core.validators import MinValueValidator, MaxValueValidator
+
+class ProductPairing(models.Model):
+    """
+    Model for storing product pairings (products that go well together)
+    """
+    primary_product = models.ForeignKey('Product', on_delete=models.CASCADE, related_name='paired_products')
+    paired_product = models.ForeignKey('Product', on_delete=models.CASCADE, related_name='paired_with')
+    pairing_strength = models.PositiveSmallIntegerField(
+        default=1,
+        validators=[MinValueValidator(1), MaxValueValidator(5)],
+        help_text="Rating from 1-5 indicating how strongly these products pair together"
+    )
+    description = models.TextField(
+        blank=True, 
+        null=True, 
+        help_text="Optional description explaining why these products work well together"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        unique_together = ('primary_product', 'paired_product')
+        ordering = ['-pairing_strength', '-created_at']
+
+    def __str__(self):
+        return f"{self.primary_product.name} paired with {self.paired_product.name}"
+    
+
+# recommendation for product 
+
+
+from django.db import models
+from django.contrib.auth import get_user_model
+from django.utils import timezone
+
+User = get_user_model()
+
+class ProductView(models.Model):
+    """Track when users view products"""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
+    product = models.ForeignKey('Product', on_delete=models.CASCADE)
+    session_id = models.CharField(max_length=100, null=True, blank=True)
+    viewed_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ['-viewed_at']
+        indexes = [
+            models.Index(fields=['user']),
+            models.Index(fields=['product']),
+            models.Index(fields=['session_id']),
+        ]
+    
+    @classmethod
+    def record_view(cls, product, user=None, session_id=None):
+        """Record that a product was viewed"""
+        return cls.objects.create(
+            product=product,
+            user=user,
+            session_id=session_id
+        )
+    
+    @classmethod
+    def get_recently_viewed(cls, user=None, session_id=None, limit=10):
+        """Get recently viewed products for a user or session"""
+        query = cls.objects.all()
+        if user:
+            query = query.filter(user=user)
+        elif session_id:
+            query = query.filter(session_id=session_id)
+        else:
+            return []
+            
+        # Get distinct products, ordered by most recent view
+        viewed_products = query.order_by('-viewed_at').distinct('product')[:limit]
+        return [view.product for view in viewed_products]
+        
+    def __str__(self):
+        user_str = str(self.user) if self.user else self.session_id
+        return f"{user_str} viewed {self.product.name}"
+
+
+class ProductRecommendation(models.Model):
+    """Model for storing pre-calculated product recommendations"""
+    RECOMMENDATION_TYPES = (
+        ('similar', 'Similar Products'),
+        ('frequently_bought', 'Frequently Bought Together'),
+        ('popular_in_category', 'Popular in Category'),
+        ('trending', 'Trending Now'),
+        ('custom', 'Custom Recommendation')
+    )
+    
+    source_product = models.ForeignKey('Product', on_delete=models.CASCADE, related_name='recommendations')
+    recommended_product = models.ForeignKey('Product', on_delete=models.CASCADE, related_name='recommended_for')
+    recommendation_type = models.CharField(max_length=30, choices=RECOMMENDATION_TYPES)
+    score = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        unique_together = ('source_product', 'recommended_product', 'recommendation_type')
+        ordering = ['-score']
+        indexes = [
+            models.Index(fields=['source_product', 'recommendation_type', '-score']),
+        ]
+        
+    def __str__(self):
+        return f"{self.get_recommendation_type_display()}: {self.source_product.name} → {self.recommended_product.name}"
+    
+
 

@@ -193,3 +193,108 @@ class ProductSerializer(serializers.ModelSerializer):
             'youtube_url', 'broacher', "whats_inside", "more_info", 'images', 
             'videos', 'attributes', 'variant_parent', 'created_at', 'updated_at'
         ]
+
+
+# product pairing serializers 
+
+
+
+
+
+
+class ProductLightSerializer(serializers.ModelSerializer):
+    """Lightweight Product serializer for nested representations"""
+    brand_name = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = Product
+        fields = ['id', 'product_code', 'name', 'brand_name', 'price', 'mrp', 'discount_price', 'is_available']
+        
+    def get_brand_name(self, obj):
+        return str(obj.brand) if obj.brand else None
+
+class ProductPairingSerializer(serializers.ModelSerializer):
+    """Full serializer for ProductPairing objects"""
+    paired_product_details = ProductLightSerializer(source='paired_product', read_only=True)
+    
+    class Meta:
+        model = ProductPairing
+        fields = [
+            'id', 'primary_product', 'paired_product', 'paired_product_details',
+            'pairing_strength', 'description', 'is_active'
+        ]
+        
+class ProductPairingCreateSerializer(serializers.ModelSerializer):
+    """Serializer for creating product pairings"""
+    class Meta:
+        model = ProductPairing
+        fields = ['primary_product', 'paired_product', 'pairing_strength', 'description']
+        
+    def validate(self, data):
+        # Ensure a product can't be paired with itself
+        if data['primary_product'] == data['paired_product']:
+            raise serializers.ValidationError("A product cannot be paired with itself.")
+            
+        # Check if this pairing already exists
+        if ProductPairing.objects.filter(
+            primary_product=data['primary_product'],
+            paired_product=data['paired_product']
+        ).exists():
+            raise serializers.ValidationError("This product pairing already exists.")
+            
+        return data
+
+class ProductWithPairingsSerializer(serializers.ModelSerializer):
+    """Product serializer that includes paired products"""
+    paired_products = serializers.SerializerMethodField()
+    brand_name = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = Product
+        fields = [
+            'id', 'product_code', 'name', 'brand_name', 'description', 'category',
+            'mrp', 'price', 'discount_price', 'stock', 'is_available',
+            'youtube_url', 'whats_inside', 'paired_products'
+        ]
+        
+    def get_brand_name(self, obj):
+        return str(obj.brand) if obj.brand else None
+        
+    def get_paired_products(self, obj):
+        pairings = obj.paired_products.filter(is_active=True)
+        return ProductPairingSerializer(pairings, many=True).data
+    
+
+
+# recommendation system 
+
+from .models import ProductRecommendation, ProductView
+
+
+class ProductRecommendationSerializer(serializers.ModelSerializer):
+    """Serializer for product recommendations"""
+    recommended_product_details = ProductLightSerializer(source='recommended_product', read_only=True)
+    recommendation_type_display = serializers.CharField(source='get_recommendation_type_display', read_only=True)
+    
+    class Meta:
+        model = ProductRecommendation
+        fields = [
+            'id', 'source_product', 'recommended_product', 'recommended_product_details',
+            'recommendation_type', 'recommendation_type_display', 'score'
+        ]
+
+class ProductViewSerializer(serializers.ModelSerializer):
+    """Serializer for product views"""
+    class Meta:
+        model = ProductView
+        fields = ['id', 'product', 'viewed_at']
+
+class RecommendationResultSerializer(serializers.Serializer):
+    """Serializer for recommendation results by type"""
+    paired_with = ProductLightSerializer(many=True, required=False)
+    similar = ProductLightSerializer(many=True, required=False)
+    frequently_bought = ProductLightSerializer(many=True, required=False)
+    popular_in_category = ProductLightSerializer(many=True, required=False) 
+    trending = ProductLightSerializer(many=True, required=False)
+    custom = ProductLightSerializer(many=True, required=False)
+    recently_viewed = ProductLightSerializer(many=True, required=False)

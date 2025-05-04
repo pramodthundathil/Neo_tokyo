@@ -1211,3 +1211,243 @@ class ProductMediaViewSet(viewsets.ViewSet):
 
 #=========================================================================================================
 #=========================================================================================================
+# ===================================================  Products Pairing =================================
+
+
+from .models import Product, ProductPairing
+from rest_framework import filters
+from django_filters.rest_framework import DjangoFilterBackend
+from .serializers import (
+    ProductPairingSerializer, 
+    ProductPairingCreateSerializer,
+    ProductWithPairingsSerializer
+)
+
+class ProductPairingViewSet(viewsets.ModelViewSet):
+    """ViewSet for CRUD operations on product pairings"""
+    queryset = ProductPairing.objects.all()
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ['primary_product', 'paired_product', 'is_active', 'pairing_strength']
+    search_fields = ['primary_product__name', 'paired_product__name', 'description']
+    ordering_fields = ['pairing_strength', 'created_at']
+    
+    def get_serializer_class(self):
+        if self.action in ['create', 'update', 'partial_update']:
+            return ProductPairingCreateSerializer
+        return ProductPairingSerializer
+    
+    def get_permissions(self):
+        if self.action in ['create', 'update', 'partial_update', 'destroy']:
+            return [IsAdmin()]
+        return [AllowAny()]
+    
+    @action(detail=False, methods=['get'])
+    def for_product(self, request):
+        """Get all pairings for a specific product"""
+        product_id = request.query_params.get('product_id')
+        if not product_id:
+            return Response(
+                {"error": "product_id is required"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+            
+        try:
+            product = Product.objects.get(id=product_id)
+        except Product.DoesNotExist:
+            return Response(
+                {"error": "Product not found"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+            
+        pairings = ProductPairing.objects.filter(
+            primary_product=product,
+            is_active=True
+        )
+        serializer = ProductPairingSerializer(pairings, many=True)
+        return Response(serializer.data)
+    
+    @action(detail=True, methods=['post'])
+    def toggle_active(self, request, pk=None):
+        """Toggle the is_active status of a product pairing"""
+        pairing = self.get_object()
+        pairing.is_active = not pairing.is_active
+        pairing.save()
+        return Response({
+            "status": "success",
+            "is_active": pairing.is_active
+        })
+
+class ProductWithPairingsView(generics.RetrieveAPIView):
+    """View to get a product with its paired products"""
+    queryset = Product.objects.all()
+    serializer_class = ProductWithPairingsSerializer
+    permission_classes = [AllowAny]
+    
+    def get_object(self):
+        # Allow lookup by product_code or primary key
+        lookup_field = self.kwargs.get('pk')
+        
+        # First try to find by product_code
+        product = Product.objects.filter(product_code=lookup_field).first()
+        if not product:
+            # If not found, try to find by primary key
+            try:
+                product = Product.objects.get(pk=lookup_field)
+            except Product.DoesNotExist:
+                pass
+                
+        if not product:
+            self.permission_denied(self.request)
+            
+        return product
+    
+
+#product recommendation system 
+
+
+
+
+from .models import Product, ProductRecommendation, ProductView
+from .serializers import (
+    ProductLightSerializer,
+    ProductRecommendationSerializer,
+    RecommendationResultSerializer
+)
+from .recommendation_service import RecommendationService
+
+class ProductRecommendationViewSet(viewsets.ModelViewSet):
+    """ViewSet for managing product recommendations"""
+    queryset = ProductRecommendation.objects.all()
+    serializer_class = ProductRecommendationSerializer
+    
+    def get_permissions(self):
+        if self.action in ['create', 'update', 'partial_update', 'destroy', 'refresh_recommendations']:
+            return [IsAdmin]
+        return [AllowAny()]
+        
+    @action(detail=False, methods=['get'])
+    def by_product(self, request):
+        """Get recommendations for a specific product, optionally filtered by type"""
+        product_id = request.query_params.get('product_id')
+        rec_type = request.query_params.get('type')
+        limit = int(request.query_params.get('limit', 5))
+        
+        if not product_id:
+            return Response(
+                {"error": "product_id is required"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            product = Product.objects.get(id=product_id)
+        except Product.DoesNotExist:
+            return Response(
+                {"error": "Product not found"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+            
+        # Record this product view if user or session is provided
+        user = request.user if request.user.is_authenticated else None
+        session_id = request.session.session_key if hasattr(request, 'session') else None
+        
+        if user or session_id:
+            ProductView.record_view(product, user=user, session_id=session_id)
+            
+        # Get recommendations based on type
+        if rec_type:
+            recommendations = RecommendationService.get_recommendations(
+                product, 
+                recommendation_type=rec_type,
+                limit=limit
+            )
+            serializer = ProductLightSerializer(recommendations, many=True)
+            return Response(serializer.data)
+        else:
+            # Get all recommendation types
+            recommendations = RecommendationService.get_all_recommendations(
+                product,
+                limit_per_type=limit
+            )
+            
+            # Add recently viewed if available
+            if user or session_id:
+                recently_viewed = ProductView.get_recently_viewed(
+                    user=user, 
+                    session_id=session_id,
+                    limit=limit
+                )
+                # Filter out the current product
+                recently_viewed = [p for p in recently_viewed if p.id != product.id]
+                if recently_viewed:
+                    recommendations['recently_viewed'] = recently_viewed
+            
+            serializer = RecommendationResultSerializer(recommendations)
+            return Response(serializer.data)
+    
+    @action(detail=False, methods=['get'])
+    def trending(self, request):
+        """Get trending products"""
+        limit = int(request.query_params.get('limit', 10))
+        
+        # Get products marked as trending
+        trending_recs = ProductRecommendation.objects.filter(
+            recommendation_type='trending',
+            is_active=True,
+            recommended_product__is_available=True
+        ).order_by('-score')[:limit]
+        
+        trending_products = [rec.recommended_product for rec in trending_recs]
+        serializer = ProductLightSerializer(trending_products, many=True)
+        return Response(serializer.data)
+    
+    @action(detail=False, methods=['post'])
+    def refresh_recommendations(self, request):
+        """Refresh recommendations for a product or all products"""
+        product_id = request.data.get('product_id')
+        
+        if product_id:
+            try:
+                product = Product.objects.get(id=product_id)
+                RecommendationService.refresh_all_recommendations(product)
+                return Response({
+                    "status": "success",
+                    "message": f"Recommendations refreshed for product {product.name}"
+                })
+            except Product.DoesNotExist:
+                return Response(
+                    {"error": "Product not found"},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+        else:
+            # This can be a long-running process, so in a real application
+            # you might want to use a background task or Celery
+            transaction.on_commit(
+                lambda: RecommendationService.refresh_all_recommendations()
+            )
+            return Response({
+                "status": "success",
+                "message": "Recommendation refresh scheduled for all products"
+            })
+    
+    @action(detail=False, methods=['get'])
+    def recently_viewed(self, request):
+        """Get recently viewed products for the current user/session"""
+        limit = int(request.query_params.get('limit', 10))
+        
+        user = request.user if request.user.is_authenticated else None
+        session_id = request.session.session_key if hasattr(request, 'session') else None
+        
+        if not (user or session_id):
+            return Response(
+                {"error": "Authentication or session required"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+            
+        recently_viewed = ProductView.get_recently_viewed(
+            user=user, 
+            session_id=session_id,
+            limit=limit
+        )
+        
+        serializer = ProductLightSerializer(recently_viewed, many=True)
+        return Response(serializer.data)

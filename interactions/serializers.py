@@ -89,7 +89,7 @@ from .models import GrievanceTicket
 class GrievanceTicketSerializer(serializers.ModelSerializer):
     class Meta:
         model = GrievanceTicket
-        fields = ['id', 'date_created', 'date_updated', 'product', 'product_serial_number', 
+        fields = ['id', 'date_created', 'date_updated', 'product','product_name', 'product_serial_number', 
                  'grievance', 'conclusion', 'ticket_id',"is_concluded"]
         read_only_fields = ['id', 'date_created', 'date_updated', 'ticket_id', 'user',"conclusion"]
 
@@ -101,7 +101,7 @@ class GrievanceTicketSerializer(serializers.ModelSerializer):
 class GrievanceTicketAdminSerializer(serializers.ModelSerializer):
     class Meta:
         model = GrievanceTicket
-        fields = ['id', 'date_created', 'date_updated', 'user', 'product', 'product_serial_number',
+        fields = ['id', 'date_created', 'date_updated', 'user', 'product', 'product_name', 'product_serial_number',
                  'grievance', 'conclusion', 'ticket_id',"is_concluded"]
         read_only_fields = ['id', 'date_created', 'date_updated', 'ticket_id', 'user',
                            'product', 'product_serial_number', 'grievance']

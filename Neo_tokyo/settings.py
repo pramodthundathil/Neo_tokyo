@@ -51,6 +51,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'inventory.middleware.ProductViewMiddleware'
 ]
 
 SOCIAL_AUTH_PIPELINE = (
@@ -84,6 +85,20 @@ CORS_ALLOWED_ORIGINS = [
 ]
 
 ROOT_URLCONF = 'Neo_tokyo.urls'
+
+# Configure session settings
+SESSION_ENGINE = 'django.contrib.sessions.backends.db'  # Database-backed sessions
+SESSION_COOKIE_AGE = 60 * 60 * 24 * 30  # 30 days in seconds
+
+
+# Recommended: Configure caching for recommendation queries
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'unique-recommendation-cache',
+        'TIMEOUT': 3600,  # 1 hour in seconds
+    }
+}
 
 TEMPLATES = [
     {

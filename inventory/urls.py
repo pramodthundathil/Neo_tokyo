@@ -80,7 +80,9 @@ urlpatterns = [
     path("ProductAttributeCategoryListView",views.ProductAttributeCategoryListView.as_view(),name="ProductAttributeCategoryListView"),
 
     #=====================================================================================================
-
+    ## product pairing 
+    path('products/<str:pk>/with-pairings/', views.ProductWithPairingsView.as_view(), name='product-with-pairings'),
+    path('products/<str:pk>/recommendations/', views.ProductWithPairingsView.as_view(), name='product-recommendations'),
 
 ]
 
@@ -96,6 +98,9 @@ router.register(r'variant_relationship', VariantRelationshipAttributeViewSet, ba
 router.register(r'product_variant', ProductVariantViewSet, basename='product_variant'),
 router.register(r'product_admin', ProductViewSet, basename="product_admin")
 router.register(r'products', ProductMediaViewSet, basename='product-media')
+router.register(r'product-pairings', views.ProductPairingViewSet, basename="product_pairing")
+router.register(r'recommendations', views.ProductRecommendationViewSet, basename="product_recommendation")
+
 
 urlpatterns += router.urls
 
