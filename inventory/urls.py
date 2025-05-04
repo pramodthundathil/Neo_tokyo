@@ -10,6 +10,7 @@ from .views import (
     VariantRelationshipAttributeViewSet,
     ProductVariantViewSet,
     ProductViewSet,
+    ProductMediaViewSet,
     )
 
 router = DefaultRouter()
@@ -94,6 +95,7 @@ router.register(r'productattribute_details', AttributeValueDetailViewSet, basena
 router.register(r'variant_relationship', VariantRelationshipAttributeViewSet, basename='variant_relationship'),
 router.register(r'product_variant', ProductVariantViewSet, basename='product_variant'),
 router.register(r'product_admin', ProductViewSet, basename="product_admin")
+router.register(r'products', ProductMediaViewSet, basename='product-media')
 
 urlpatterns += router.urls
 

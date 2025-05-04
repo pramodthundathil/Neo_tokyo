@@ -7,18 +7,48 @@ class TaxSerializer(serializers.ModelSerializer):
         model = Tax
         fields = ['id','tax_name', 'tax_percentage']
 
-# Product Image Serializer
+
 class ProductImageSerializer(serializers.ModelSerializer):
+    image_url = serializers.SerializerMethodField()
+    
     class Meta:
         model = ProductImage
-        fields = ['id', 'image', 'is_primary']
+        fields = ['id', 'image', 'image_url', 'is_primary']
+        read_only_fields = ['image_url']
+    
+    def get_image_url(self, obj):
+        """Return the complete URL for the image"""
+        request = self.context.get('request')
+        if request and obj.image:
+            return request.build_absolute_uri(obj.image.url)
+        return None
 
-# Product Video Serializer
 class ProductVideoSerializer(serializers.ModelSerializer):
+    video_url = serializers.SerializerMethodField()
+    
     class Meta:
         model = ProductVideo
-        fields = ['id', 'video']
+        fields = ['id', 'video', 'video_url']
+        read_only_fields = ['video_url']
+    
+    def get_video_url(self, obj):
+        """Return the complete URL for the video"""
+        request = self.context.get('request')
+        if request and obj.video:
+            return request.build_absolute_uri(obj.video.url)
+        return None
 
+# For use in bulk uploading multiple media files
+class BulkProductMediaUploadSerializer(serializers.Serializer):
+    images = serializers.ListField(
+        child=serializers.ImageField(),
+        required=False
+    )
+    videos = serializers.ListField(
+        child=serializers.FileField(),
+        required=False
+    )
+    primary_image_index = serializers.IntegerField(required=False, default=0)
 
 
 class CategorySerializer(serializers.ModelSerializer):
