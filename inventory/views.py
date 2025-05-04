@@ -980,7 +980,42 @@ class ProductMediaViewSet(viewsets.ViewSet):
     def add_image(self, request, pk=None):
         """Add a new image to a product"""
         # Original implementation remains the same
-        pass
+        """
+        Add a new image to a product.
+        POST /api/products/{product_id}/add-image/
+        """
+        product = get_object_or_404(Product, pk=pk)
+        
+        # Handle single or multiple image uploads
+        images = request.FILES.getlist('image')
+        if not images:
+            return Response(
+                {"error": "No images provided"}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        is_primary = request.data.get('is_primary', False)
+        # Convert string 'true'/'false' to boolean if needed
+        if isinstance(is_primary, str):
+            is_primary = is_primary.lower() == 'true'
+            
+        created_images = []
+        
+        with transaction.atomic():
+            for img in images:
+                image_data = {
+                    'product': product,
+                    'image': img,
+                    'is_primary': is_primary and len(created_images) == 0  # Only first image can be primary
+                }
+                product_image = ProductImage.objects.create(**image_data)
+                serializer = ProductImageSerializer(product_image)
+                created_images.append(serializer.data)
+                
+        return Response(
+            {"message": f"{len(created_images)} image(s) added successfully", "images": created_images},
+            status=status.HTTP_201_CREATED
+        )
     
     @swagger_auto_schema(
         operation_description="Upload one or multiple videos to a product",
@@ -1015,9 +1050,33 @@ class ProductMediaViewSet(viewsets.ViewSet):
     )
     @action(detail=True, methods=['post'], url_path='add-video')
     def add_video(self, request, pk=None):
-        """Add a new video to a product"""
-        # Original implementation remains the same
-        pass
+       
+        product = get_object_or_404(Product, pk=pk)
+        
+        # Handle single or multiple video uploads
+        videos = request.FILES.getlist('video')
+        if not videos:
+            return Response(
+                {"error": "No videos provided"}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+            
+        created_videos = []
+        
+        with transaction.atomic():
+            for vid in videos:
+                video_data = {
+                    'product': product,
+                    'video': vid
+                }
+                product_video = ProductVideo.objects.create(**video_data)
+                serializer = ProductVideoSerializer(product_video)
+                created_videos.append(serializer.data)
+                
+        return Response(
+            {"message": f"{len(created_videos)} video(s) added successfully", "videos": created_videos},
+            status=status.HTTP_201_CREATED
+        )
     
     @swagger_auto_schema(
         operation_description="List all images for a product",
@@ -1044,9 +1103,14 @@ class ProductMediaViewSet(viewsets.ViewSet):
     )
     @action(detail=True, methods=['get'], url_path='images')
     def list_images(self, request, pk=None):
-        """List all images for a product"""
-        # Original implementation remains the same
-        pass
+        """
+        List all images for a product.
+        GET /api/products/{product_id}/images/
+        """
+        product = get_object_or_404(Product, pk=pk)
+        images = ProductImage.objects.filter(product=product)
+        serializer = ProductImageSerializer(images, many=True)
+        return Response(serializer.data)
     
     @swagger_auto_schema(
         operation_description="List all videos for a product",
@@ -1071,9 +1135,14 @@ class ProductMediaViewSet(viewsets.ViewSet):
     )
     @action(detail=True, methods=['get'], url_path='videos')
     def list_videos(self, request, pk=None):
-        """List all videos for a product"""
-        # Original implementation remains the same
-        pass
+        """
+        List all videos for a product.
+        GET /api/products/{product_id}/videos/
+        """
+        product = get_object_or_404(Product, pk=pk)
+        videos = ProductVideo.objects.filter(product=product)
+        serializer = ProductVideoSerializer(videos, many=True)
+        return Response(serializer.data)
     
     @swagger_auto_schema(
         operation_description="Set an image as the primary image for a product",
@@ -1091,9 +1160,21 @@ class ProductMediaViewSet(viewsets.ViewSet):
     )
     @action(detail=True, methods=['patch'], url_path='set-primary-image/(?P<image_id>[^/.]+)')
     def set_primary_image(self, request, pk=None, image_id=None):
-        """Set an image as the primary image for a product"""
-        # Original implementation remains the same
-        pass
+        """
+        Set an image as the primary image for a product.
+        PATCH /api/products/{product_id}/set-primary-image/{image_id}/
+        """
+        product = get_object_or_404(Product, pk=pk)
+        image = get_object_or_404(ProductImage, pk=image_id, product=product)
+        
+        # The model's save method will handle updating other images
+        image.is_primary = True
+        image.save()
+        
+        return Response(
+            {"message": "Primary image updated successfully"},
+            status=status.HTTP_200_OK
+        )
     
     @swagger_auto_schema(
         operation_description="Delete an image from a product. If it was the primary image, another one will be set as primary if available.",
@@ -1111,9 +1192,30 @@ class ProductMediaViewSet(viewsets.ViewSet):
     )
     @action(detail=True, methods=['delete'], url_path='delete-image/(?P<image_id>[^/.]+)')
     def delete_image(self, request, pk=None, image_id=None):
-        """Delete an image from a product"""
-        # Original implementation remains the same
-        pass
+        """
+        Delete an image from a product.
+        DELETE /api/products/{product_id}/delete-image/{image_id}/
+        """
+        product = get_object_or_404(Product, pk=pk)
+        image = get_object_or_404(ProductImage, pk=image_id, product=product)
+        
+        # Store if it was a primary image
+        was_primary = image.is_primary
+        
+        # Delete the image
+        image.delete()
+        
+        # If we deleted a primary image, set another one as primary if any exist
+        if was_primary:
+            remaining_images = ProductImage.objects.filter(product=product).first()
+            if remaining_images:
+                remaining_images.is_primary = True
+                remaining_images.save()
+        
+        return Response(
+            {"message": "Image deleted successfully"},
+            status=status.HTTP_200_OK
+        )
     
     @swagger_auto_schema(
         operation_description="Delete a video from a product",
@@ -1131,9 +1233,20 @@ class ProductMediaViewSet(viewsets.ViewSet):
     )
     @action(detail=True, methods=['delete'], url_path='delete-video/(?P<video_id>[^/.]+)')
     def delete_video(self, request, pk=None, video_id=None):
-        """Delete a video from a product"""
-        # Original implementation remains the same
-        pass
+        """
+        Delete a video from a product.
+        DELETE /api/products/{product_id}/delete-video/{video_id}/
+        """
+        product = get_object_or_404(Product, pk=pk)
+        video = get_object_or_404(ProductVideo, pk=video_id, product=product)
+        
+        # Delete the video
+        video.delete()
+        
+        return Response(
+            {"message": "Video deleted successfully"},
+            status=status.HTTP_200_OK
+        )
         
     @swagger_auto_schema(
         operation_description="Upload multiple images and videos at once",
@@ -1199,9 +1312,51 @@ class ProductMediaViewSet(viewsets.ViewSet):
     )
     @action(detail=True, methods=['post'], url_path='bulk-upload')
     def bulk_upload(self, request, pk=None):
-        """Upload multiple images and videos at once"""
-        # Original implementation remains the same
-        pass
+        """
+        Upload multiple images and videos at once
+        POST /api/products/{product_id}/bulk-upload/
+        """
+        product = get_object_or_404(Product, pk=pk)
+        
+        images = request.FILES.getlist('images')
+        videos = request.FILES.getlist('videos')
+        primary_image_index = int(request.data.get('primary_image_index', 0))
+        
+        if not images and not videos:
+            return Response(
+                {"error": "No media files provided"}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        with transaction.atomic():
+            # Process images
+            created_images = []
+            for i, img in enumerate(images):
+                image_data = {
+                    'product': product,
+                    'image': img,
+                    'is_primary': i == primary_image_index
+                }
+                product_image = ProductImage.objects.create(**image_data)
+                serializer = ProductImageSerializer(product_image, context={'request': request})
+                created_images.append(serializer.data)
+            
+            # Process videos
+            created_videos = []
+            for vid in videos:
+                video_data = {
+                    'product': product,
+                    'video': vid
+                }
+                product_video = ProductVideo.objects.create(**video_data)
+                serializer = ProductVideoSerializer(product_video, context={'request': request})
+                created_videos.append(serializer.data)
+        
+        return Response({
+            "message": f"Added {len(created_images)} image(s) and {len(created_videos)} video(s) successfully",
+            "images": created_images,
+            "videos": created_videos
+        }, status=status.HTTP_201_CREATED)
 
 
 
