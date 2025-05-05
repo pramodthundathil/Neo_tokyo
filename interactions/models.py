@@ -90,14 +90,15 @@ class GrievanceTicket(models.Model):
     product_name = models.CharField(max_length=255, null=True, blank=True)
 
     image = models.ImageField(upload_to="grievance_image", null=True, blank=True)
-    link  = models.URLField(null=True, blank=True)
+    link = models.URLField(null=True, blank=True)
 
     product_serial_number = models.CharField(max_length=100, null=True, blank=True)
-    grievance =  models.TextField()
+    grievance = models.TextField()
     conclusion = models.TextField(null=True, blank=True)
     ticket_id = models.CharField(max_length=100)
     is_concluded = models.BooleanField(default=False)
 
+    @staticmethod
     def generate_unique_ticket_id():
         while True:
             ticket_id = get_random_string(length=10, allowed_chars='0123456789')
@@ -108,7 +109,6 @@ class GrievanceTicket(models.Model):
         if not self.ticket_id:
             self.ticket_id = self.generate_unique_ticket_id()
         super().save(*args, **kwargs)
-
     
     def __str__(self):
         """Generate a string with user details for the grievance ticket."""
@@ -117,4 +117,3 @@ class GrievanceTicket(models.Model):
         serial_info = f"Serial Number: {self.product_serial_number if self.product_serial_number else 'N/A'}"
 
         return f"{user_info}, {product_info}, {serial_info}"
-

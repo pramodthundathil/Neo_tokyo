@@ -87,6 +87,7 @@ class ProductReviewSerializer(serializers.ModelSerializer):
 from .models import GrievanceTicket
 
 class GrievanceTicketSerializer(serializers.ModelSerializer):
+    image = serializers.ImageField(required=False)
     class Meta:
         model = GrievanceTicket
         fields = ['id', 'date_created', 'date_updated', 'product','product_name',"image","link", 'product_serial_number', 
@@ -99,6 +100,7 @@ class GrievanceTicketSerializer(serializers.ModelSerializer):
         return super().create(validated_data)
 
 class GrievanceTicketAdminSerializer(serializers.ModelSerializer):
+    image = serializers.ImageField(required=False)
     class Meta:
         model = GrievanceTicket
         fields = ['id', 'date_created', 'date_updated', 'user', 'product', 'product_name',"image","link", 'product_serial_number',
