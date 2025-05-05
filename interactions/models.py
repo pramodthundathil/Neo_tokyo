@@ -88,6 +88,10 @@ class GrievanceTicket(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='tickets')
     product = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True, blank=True, related_name='grivience_on_product')
     product_name = models.CharField(max_length=255, null=True, blank=True)
+
+    image = models.FileField(upload_to="grievance_image", null=True, blank=True)
+    link  = models.URLField(null=True, blank=True)
+
     product_serial_number = models.CharField(max_length=100, null=True, blank=True)
     grievance =  models.TextField()
     conclusion = models.TextField(null=True, blank=True)
