@@ -250,6 +250,8 @@ SOCIAL_AUTH_GOOGLE_OAUTH2_SCOPE = ['email', 'profile']    # Permissions to reque
 # Redirect URI (same as you set in the Google Console)
 SOCIAL_AUTH_GOOGLE_OAUTH2_REDIRECT_URI = 'http://localhost:8000/auth/google/callback/'
 
+# Google OAuth2 settings
+GOOGLE_CLIENT_ID = "752728323430-85geretfsn5f7ino654hcqolnrm955c3.apps.googleusercontent.com"
 
 RAZOR_KEY_ID = "rzp_test_9tCOZuKLhiZdaM"
 RAZOR_KEY_SECRET = "IfMivqkfXWvuJi2IR10W4bzN"

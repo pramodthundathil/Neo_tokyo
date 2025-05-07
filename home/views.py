@@ -117,6 +117,7 @@ def create_user(backend, user, response, *args, **kwargs):
 # Google Authentication callback class 
 from google.auth.transport import requests
 from google.oauth2 import id_token
+from django.conf import settings
 
 User = get_user_model()
 
@@ -128,7 +129,15 @@ class GoogleAuthView(APIView):
 
         try:
             # Verify token with Google
-            google_info = id_token.verify_oauth2_token(token, requests.Request())
+            google_info = id_token.verify_oauth2_token(
+                token, 
+                requests.Request(), 
+                settings.GOOGLE_CLIENT_ID
+            )
+
+            # Check if the token is expired
+            if google_info['iss'] not in ['accounts.google.com', 'https://accounts.google.com']:
+                return Response({"error": "Wrong issuer"}, status=status.HTTP_400_BAD_REQUEST)
 
             if 'email' not in google_info:
                 return Response({"error": "Invalid Google token"}, status=status.HTTP_400_BAD_REQUEST)
