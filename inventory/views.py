@@ -415,6 +415,24 @@ def view_category(request):
     return Response(serializer.data,status=status.HTTP_200_OK )
 
 
+@swagger_auto_schema(methods=['get'],operation_description="Get a list of all categories allow for public access")
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def view_category_allow_any(request):
+    category = Category.objects.all()
+    serializer = CategorySerializer(category, many = True)
+    return Response(serializer.data,status=status.HTTP_200_OK )
+
+
+@swagger_auto_schema(methods=['get'],operation_description="Get a Single Instance categories for public access")
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def category_single_view_allow_any(request,pk):
+    category = get_object_or_404(Category, id = pk)
+    serializer = CategorySerializer(instance = category)
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+
 
 
 class ProductAttributeCategoryListView(APIView):
@@ -577,6 +595,23 @@ class BrandViewSet(viewsets.ModelViewSet):
             },
             status=status.HTTP_204_NO_CONTENT,
         )
+    
+@swagger_auto_schema(methods=['get'],operation_description="Get a list of all Brands allow for public access")
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def view_brand_allow_any(request):
+    brand = Brand.objects.all()
+    serializer = BrandSerializer(brand, many = True)
+    return Response(serializer.data,status=status.HTTP_200_OK )
+
+
+@swagger_auto_schema(methods=['get'],operation_description="Get a Single Instance categories for public access")
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def brands_single_view_allow_any(request,pk):
+    brand = get_object_or_404(Brand, id = pk)
+    serializer = BrandSerializer(instance = brand)
+    return Response(serializer.data, status=status.HTTP_200_OK)
 
 #=========================================================BRAND ENTERING END==========================
 

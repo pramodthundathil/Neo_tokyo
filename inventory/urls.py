@@ -78,6 +78,14 @@ urlpatterns = [
     path("category_update/<int:pk>",views.category_update,name="category_update"),
     path("category_delete/<int:pk>",views.category_delete,name="category_delete"),
     path("ProductAttributeCategoryListView",views.ProductAttributeCategoryListView.as_view(),name="ProductAttributeCategoryListView"),
+    path("view_category_allow_any/",views.view_category_allow_any,name="view_category_allow_any"),
+    path("category_single_view_allow_any/<int:pk>",views.category_single_view_allow_any,name="category_single_view_allow_any"),
+
+    #brand allow any serialization api end points ..........................................
+
+    path("view_brand_allow_any/",views.view_brand_allow_any,name="view_brand_allow_any"),
+    path("brands_single_view_allow_any/<int:pk>",views.brands_single_view_allow_any,name="brands_single_view_allow_any"),
+
 
     #=====================================================================================================
     ## product pairing 
