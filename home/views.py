@@ -505,9 +505,82 @@ def resend_registration_otp(request):
             {"detail": message},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
+    
 
+from rest_framework_simplejwt.tokens import RefreshToken, AccessToken, TokenError
+from django.core.cache import cache
+from datetime import timedelta
+from django.utils import timezone
 
-
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def logout(request):
+    """
+    Logout a user by blacklisting both access and refresh tokens
+    that are provided in the request
+    Content-type: application/json
+    """
+    try:
+        # Get both tokens from request
+        refresh_token = request.data.get('refresh')
+        access_token = request.data.get('access')
+        
+        if not refresh_token:
+            return Response(
+                {"error": "Refresh token is required."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+            
+        if not access_token:
+            return Response(
+                {"error": "Access token is required."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Blacklist refresh token
+        try:
+            token = RefreshToken(refresh_token)
+            token.blacklist()
+        except TokenError as e:
+            return Response(
+                {"error": f"Invalid refresh token: {str(e)}"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Blacklist access token by storing it in cache
+        # Use the token's expiry time (if you can extract it) or a default time
+        # Default to 24 hours if you can't determine the expiry
+        try:
+            # Extract JTI (JWT ID) if possible
+            # If that's not possible, use the whole token as key
+            cache.set(
+                f'blacklisted_access_{access_token}',
+                'blacklisted',
+                timeout=24*60*60  # 24 hours default
+            )
+        except Exception as e:
+            # Log the error but continue with logout process
+            print(f"Error blacklisting access token: {str(e)}")
+        
+        # You can also remove any user-specific cache data
+        user_id = request.user.id
+        try:
+            # Not all cache backends support this
+            cache.delete_pattern(f'user_session_{user_id}_*')
+        except AttributeError:
+            # Safe fallback for cache backends without delete_pattern
+            pass
+        
+        return Response(
+            {"message": "Logout successful. Tokens have been invalidated."},
+            status=status.HTTP_200_OK
+        )
+    
+    except Exception as e:
+        return Response(
+            {"error": f"Logout failed: {str(e)}"},
+            status=status.HTTP_400_BAD_REQUEST
+        )
 # Get User Data by ID
 
 from rest_framework.exceptions import AuthenticationFailed, PermissionDenied

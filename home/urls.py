@@ -18,6 +18,7 @@ urlpatterns = [
     # path('auth/google/', views.google_login, name='google_login'),
     path('auth/google/callback/', views.google_callback, name='google_callback'),
     path("auth/google/", views.GoogleAuthView.as_view(), name="google_auth"),
+    path('logout/', views.logout, name='logout'),
 
 
     #testing
