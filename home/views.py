@@ -122,6 +122,7 @@ from django.conf import settings
 User = get_user_model()
 
 class GoogleAuthView(APIView):
+    permission_classes = [AllowAny]
     def post(self, request):
         token = request.data.get("token")
         if not token:
@@ -151,13 +152,13 @@ class GoogleAuthView(APIView):
                 "email": email,
                 'first_name':name,
                 "google_id": google_id,
-                "profile_picture": profile_picture,
+                "profile_picture_url": profile_picture,
                 "is_google_authenticated": True,
             })
 
             if not created:
                 user.google_id = google_id
-                user.profile_picture = profile_picture
+                user.profile_picture_url = profile_picture
                 user.is_google_authenticated = True
                 user.save()
 
@@ -169,8 +170,8 @@ class GoogleAuthView(APIView):
                 "user": {
                     "id": user.id,
                     "email": user.email,
-                    "name": user.username,
-                    "profile_picture": user.profile_picture
+                    "name": user.first_name,
+                    "profile_picture": user.profile_picture_url
                 }
             }, status=status.HTTP_200_OK)
 

@@ -30,6 +30,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     last_name = models.CharField(max_length=30, null=True, blank=True, verbose_name='last name')
 
     profile_picture = models.FileField(upload_to="profile_pic", null=True, blank=True)
+    profile_picture_url = models.CharField(max_length=200, null=True, blank=True)
     google_id = models.CharField(max_length=100, null=True, blank=True)
     is_google_authenticated = models.BooleanField(default=False)
 
@@ -76,7 +77,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
 
         
     def __str__(self):
-        return str(self.first_name + " " + self.last_name)
+        return str(self.first_name + " " + str(self.last_name))
 
 
 class DeliveryAddress(models.Model):
