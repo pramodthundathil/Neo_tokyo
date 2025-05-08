@@ -32,6 +32,9 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     profile_picture = models.FileField(upload_to="profile_pic", null=True, blank=True)
     google_id = models.CharField(max_length=100, null=True, blank=True)
     is_google_authenticated = models.BooleanField(default=False)
+
+
+    is_verified = models.BooleanField(default=False)
     
     phone_number = models.CharField(
         max_length=15,

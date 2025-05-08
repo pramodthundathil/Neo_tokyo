@@ -316,34 +316,194 @@ def verify_otp_and_login(request):
 
 # User Creation from api User model CustomUser serializer from home.serializer.py CustomUserSerializer
 
+
+# Helper function to generate and send OTP
+def generate_and_send_otp(identifier):
+    # Generate a 6-digit OTP
+    otp = random.randint(100000, 999999)
+    
+    # Store OTP in cache with 10 minutes expiry
+    cache.set(f'otp_{identifier}', otp, timeout=600)
+    
+    # Determine if identifier is email or phone
+    if '@' in identifier:
+        # Send OTP via email
+        subject = 'Your Registration OTP'
+        message = f'Your OTP for registration is: {otp}. This OTP is valid for 10 minutes.'
+        try:
+            email = identifier
+            mail_subject = 'OTP for Account Creation -  NEO TOKYO'
+            path = "SignUp"
+            message = render_to_string('emailbody_otp.html', {'user': "Test User",
+                                                
+                                                        'token':otp,})
+
+            email = EmailMessage(mail_subject, message, to=[email])
+            email.content_subtype = "html"
+            email.send(fail_silently=True)
+            return True, "OTP sent to your email successfully."
+        except Exception as e:
+            return False, f"Failed to send OTP via email: {str(e)}"
+    else:
+        # For phone number, use SMS service (placeholder)
+        # In a real implementation, integrate with an SMS gateway
+        # This is just a placeholder for the SMS sending functionality
+        try:
+            # Example: sms_service.send(identifier, f"Your OTP for registration is: {otp}")
+            # Since we can't actually send SMS in this example, we'll just log it
+            print(f"SMS OTP {otp} would be sent to {identifier}")
+            return True, "OTP sent to your phone number successfully."
+        except Exception as e:
+            return False, f"Failed to send OTP via SMS: {str(e)}"
+
 # User Registration
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def user_registration(request):
-    # Check if email or phone number exists
+    
+    # Get user data
     email = request.data.get('email')
     phone_number = request.data.get('phone_number')
-
-    if CustomUser.objects.filter(email=email).exists():
+    
+    # Check if required fields exist
+    if not email and not phone_number:
+        return Response(
+            {"detail": "Email or phone number is required."},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    # Check if user already exists
+    if email and CustomUser.objects.filter(email=email).exists():
         return Response(
             {"detail": "A user with this email already exists."},
             status=status.HTTP_400_BAD_REQUEST
         )
-    if CustomUser.objects.filter(phone_number=phone_number).exists():
+    
+    if phone_number and CustomUser.objects.filter(phone_number=phone_number).exists():
         return Response(
             {"detail": "A user with this phone number already exists."},
             status=status.HTTP_400_BAD_REQUEST
         )
-
-    # Proceed with serializer validation and saving
+    
+    # Validate data using serializer (without saving)
     serializer = CustomUserSerializer(data=request.data)
-    if serializer.is_valid():
-        serializer.save()
+    if not serializer.is_valid():
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Store user data in cache for verification step
+    registration_data = request.data.copy()
+    identifier = email if email else phone_number
+    cache.set(f'registration_data_{identifier}', registration_data, timeout=600)
+    
+    # Generate and send OTP
+    success, message = generate_and_send_otp(identifier)
+    
+    if success:
         return Response(
-            {"message": "User registered successfully!"},
+            {
+                "message": "Registration initiated successfully. Please verify with OTP.",
+                "detail": message,
+                "identifier": identifier
+            },
+            status=status.HTTP_200_OK
+        )
+    else:
+        return Response(
+            {"detail": message},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def verify_registration_otp(request):
+    """
+    Step 2: Verify OTP and complete registration
+    """
+    identifier = request.data.get('identifier')
+    otp = request.data.get('otp')
+    
+    if not identifier or not otp:
+        return Response(
+            {'error': 'Identifier and OTP are required.'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    # Retrieve OTP from cache
+    stored_otp = cache.get(f'otp_{identifier}')
+    if stored_otp is None or str(stored_otp) != str(otp):
+        return Response(
+            {'error': 'Invalid or expired OTP.'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    # Retrieve user data from cache
+    registration_data = cache.get(f'registration_data_{identifier}')
+    if not registration_data:
+        return Response(
+            {'error': 'Registration session expired. Please start again.'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    # Create the user with verified status
+    serializer = CustomUserSerializer(data=registration_data)
+    if serializer.is_valid():
+        user = serializer.save(is_verified=True)
+        
+        # Generate JWT tokens
+        refresh = RefreshToken.for_user(user)
+        access = refresh.access_token
+        
+        # Clean up cache
+        cache.delete(f'otp_{identifier}')
+        cache.delete(f'registration_data_{identifier}')
+        
+        return Response(
+            {
+                'refresh': str(refresh),
+                'access': str(access),
+                'message': 'Registration successful.',
+                'is_admin': user.is_superuser,
+                'role': user.role
+            },
             status=status.HTTP_201_CREATED
         )
+    
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def resend_registration_otp(request):
+    """
+    Resend OTP for registration
+    """
+    identifier = request.data.get('identifier')
+    
+    if not identifier:
+        return Response(
+            {'error': 'Email or phone number is required.'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    # Check if registration data exists in cache
+    if not cache.get(f'registration_data_{identifier}'):
+        return Response(
+            {'error': 'No pending registration found for this identifier.'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    # Generate and send new OTP
+    success, message = generate_and_send_otp(identifier)
+    
+    if success:
+        return Response(
+            {"message": "OTP resent successfully.", "detail": message},
+            status=status.HTTP_200_OK
+        )
+    else:
+        return Response(
+            {"detail": message},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
 
 
 

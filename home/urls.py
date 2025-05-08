@@ -10,6 +10,9 @@ urlpatterns = [
     path('user_registration/', views.user_registration, name='user_registration'),
     path('get_user_data/<int:pk>/', views.get_user_data, name='get_user_data'),
     path('generate_otp/', views.generate_otp, name='generate_otp'),
+    path('register/verify-otp/', views.verify_registration_otp, name='verify_registration_otp'),
+    path('register/resend-otp/', views.resend_registration_otp, name='resend_registration_otp'),
+
     path('verify_otp_and_login/', views.verify_otp_and_login, name='verify_otp_and_login'),
 
     # path('auth/google/', views.google_login, name='google_login'),
