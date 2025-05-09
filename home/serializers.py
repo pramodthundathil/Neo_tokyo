@@ -19,6 +19,40 @@ class CustomUserSerializer(serializers.ModelSerializer):
         user.set_password(password)
         user.save()
         return user
+    
+
+
+# serializers.py
+class UserProfileUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CustomUser
+        fields = [
+            'first_name', 'last_name', 'phone_number', 'profile_picture',
+            'date_of_birth', 'pin_code', 'age', 'district',
+            'state', 'address',
+        ]
+        
+    def update(self, instance, validated_data):
+        # Handle profile picture upload
+        profile_picture = validated_data.get('profile_picture')
+        if profile_picture:
+            instance.profile_picture = profile_picture
+            
+            
+            
+        # Update other fields
+        instance.first_name = validated_data.get('first_name', instance.first_name)
+        instance.last_name = validated_data.get('last_name', instance.last_name)
+        instance.phone_number = validated_data.get('phone_number', instance.phone_number)
+        instance.date_of_birth = validated_data.get('date_of_birth', instance.date_of_birth)
+        instance.pin_code = validated_data.get('pin_code', instance.pin_code)
+        instance.age = validated_data.get('age', instance.age)
+        instance.district = validated_data.get('district', instance.district)
+        instance.state = validated_data.get('state', instance.state)
+        instance.address = validated_data.get('address', instance.address)
+        
+        instance.save()
+        return instance
 
 
 from .models import DeliveryAddress

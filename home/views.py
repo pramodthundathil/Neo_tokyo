@@ -12,7 +12,7 @@ from django.views.decorators.csrf import csrf_exempt
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from .serializers import CustomUserSerializer
+from .serializers import CustomUserSerializer, DeliveryAddressSerializer, UserProfileUpdateSerializer
 from .models import CustomUser
 from rest_framework.exceptions import PermissionDenied
 from rest_framework_simplejwt.authentication import JWTAuthentication
@@ -610,6 +610,58 @@ def get_user_data(request, pk):
             {"detail": str(e)}, 
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
+
+from rest_framework.parsers import MultiPartParser, FormParser
+
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
+
+class UserProfileUpdateView(APIView):
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
+    
+    @swagger_auto_schema(
+        operation_summary="Get user profile",
+        operation_description="Retrieves the current authenticated user's profile details",
+        responses={
+            200: UserProfileUpdateSerializer,
+            401: "Authentication credentials were not provided."
+        },
+        tags=['User Profile']
+    )
+    def get(self, request):
+        """Get current user profile details"""
+        serializer = UserProfileUpdateSerializer(request.user)
+        return Response(serializer.data)
+    
+    @swagger_auto_schema(
+        operation_summary="Update user profile",
+        operation_description="Updates the authenticated user's profile information. Supports partial updates.",
+        request_body=UserProfileUpdateSerializer,
+        responses={
+            200: UserProfileUpdateSerializer,
+            400: "Invalid input data",
+            401: "Authentication credentials were not provided."
+        },
+        manual_parameters=[
+            openapi.Parameter(
+                'profile_picture',
+                openapi.IN_FORM,
+                description="User profile picture file",
+                type=openapi.TYPE_FILE,
+                required=False
+            ),
+        ],
+        tags=['User Profile']
+    )
+    def patch(self, request):
+        """Update user profile"""
+        serializer = UserProfileUpdateSerializer(request.user, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
 
 @permission_classes([IsAuthenticated])
 @csrf_exempt

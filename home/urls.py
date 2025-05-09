@@ -9,6 +9,7 @@ urlpatterns = [
     path("demodata",views.demodata, name="demodata"),
     path('user_registration/', views.user_registration, name='user_registration'),
     path('get_user_data/<int:pk>/', views.get_user_data, name='get_user_data'),
+    path('profile/update/', views.UserProfileUpdateView.as_view(), name='profile-update'),
     path('generate_otp/', views.generate_otp, name='generate_otp'),
     path('register/verify-otp/', views.verify_registration_otp, name='verify_registration_otp'),
     path('register/resend-otp/', views.resend_registration_otp, name='resend_registration_otp'),
