@@ -15,12 +15,12 @@ class ProductPairingAdmin(admin.ModelAdmin):
     raw_id_fields = ('primary_product', 'paired_product')
     
     def primary_product_link(self, obj):
-        url = reverse('admin:your_app_name_product_change', args=[obj.primary_product.id])
+        url = reverse('admin:inventory_product_change', args=[obj.primary_product.id])
         return format_html('<a href="{}">{}</a>', url, obj.primary_product.name)
     primary_product_link.short_description = 'Primary Product'
     
     def paired_product_link(self, obj):
-        url = reverse('admin:your_app_name_product_change', args=[obj.paired_product.id])
+        url = reverse('admin:inventory_product_change', args=[obj.paired_product.id])
         return format_html('<a href="{}">{}</a>', url, obj.paired_product.name)
     paired_product_link.short_description = 'Paired Product'
 
@@ -35,12 +35,12 @@ class ProductRecommendationAdmin(admin.ModelAdmin):
     actions = ['refresh_recommendations']
     
     def source_product_link(self, obj):
-        url = reverse('admin:your_app_name_product_change', args=[obj.source_product.id])
+        url = reverse('admin:inventory_product_change', args=[obj.source_product.id])
         return format_html('<a href="{}">{}</a>', url, obj.source_product.name)
     source_product_link.short_description = 'Source Product'
     
     def recommended_product_link(self, obj):
-        url = reverse('admin:your_app_name_product_change', args=[obj.recommended_product.id])
+        url = reverse('admin:inventory_product_change', args=[obj.recommended_product.id])
         return format_html('<a href="{}">{}</a>', url, obj.recommended_product.name)
     recommended_product_link.short_description = 'Recommended Product'
     
@@ -70,6 +70,6 @@ class ProductViewAdmin(admin.ModelAdmin):
     date_hierarchy = 'viewed_at'
     
     def product_link(self, obj):
-        url = reverse('admin:your_app_name_product_change', args=[obj.product.id])
+        url = reverse('admin:inventory_product_change', args=[obj.product.id])
         return format_html('<a href="{}">{}</a>', url, obj.product.name)
     product_link.short_description = 'Product'
