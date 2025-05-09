@@ -214,15 +214,40 @@ class ProductLightSerializer(serializers.ModelSerializer):
         return str(obj.brand) if obj.brand else None
 
 class ProductPairingSerializer(serializers.ModelSerializer):
-    """Full serializer for ProductPairing objects"""
-    paired_product_details = ProductLightSerializer(source='paired_product', read_only=True)
+    """Serializer for product pairings that includes paired product details with image"""
+    paired_product_details = serializers.SerializerMethodField()
     
     class Meta:
         model = ProductPairing
-        fields = [
-            'id', 'primary_product', 'paired_product', 'paired_product_details',
-            'pairing_strength', 'description', 'is_active'
-        ]
+        fields = ['id', 'paired_product_details', 'pairing_strength', 'description']
+    
+    def get_paired_product_details(self, obj):
+        paired_product = obj.paired_product
+        
+        # Get the primary image for the paired product
+        primary_image = None
+        primary_image_obj = paired_product.images.filter(is_primary=True).first()
+        
+        # If no primary image exists, get the first image
+        if not primary_image_obj:
+            primary_image_obj = paired_product.images.first()
+        
+        if primary_image_obj:
+            primary_image = self.context['request'].build_absolute_uri(primary_image_obj.image.url)
+        
+        # Return product details with primary image
+        return {
+            'id': paired_product.id,
+            'product_code': paired_product.product_code,
+            'name': paired_product.name,
+            'brand_name': str(paired_product.brand) if paired_product.brand else None,
+            'price': paired_product.price,
+            'discount_price': paired_product.discount_price,
+            'is_available': paired_product.is_available,
+            'primary_image': primary_image
+        }
+
+
         
 class ProductPairingCreateSerializer(serializers.ModelSerializer):
     """Serializer for creating product pairings"""
@@ -244,35 +269,23 @@ class ProductPairingCreateSerializer(serializers.ModelSerializer):
             
         return data
     
-    
+
 
 class ProductWithPairingsSerializer(serializers.ModelSerializer):
     """Product serializer that includes paired products with their images"""
     paired_products = serializers.SerializerMethodField()
     brand_name = serializers.SerializerMethodField()
-    primary_image = serializers.SerializerMethodField()
     
     class Meta:
         model = Product
         fields = [
             'id', 'product_code', 'name', 'brand_name', 'description', 'category',
             'mrp', 'price', 'discount_price', 'stock', 'is_available',
-            'youtube_url', 'whats_inside', 'primary_image', 'paired_products'
+            'youtube_url', 'whats_inside', 'paired_products'
         ]
         
     def get_brand_name(self, obj):
         return str(obj.brand) if obj.brand else None
-    
-    def get_primary_image(self, obj):
-        # Get the primary image for the product
-        primary_image = obj.images.filter(is_primary=True).first()
-        # If no primary image exists, get the first image
-        if not primary_image:
-            primary_image = obj.images.first()
-        
-        if primary_image:
-            return self.context['request'].build_absolute_uri(primary_image.image.url)
-        return None
         
     def get_paired_products(self, obj):
         pairings = obj.paired_products.filter(is_active=True)
@@ -282,7 +295,6 @@ class ProductWithPairingsSerializer(serializers.ModelSerializer):
             context={'request': self.context['request']}  # Pass the request context
         )
         return serializer.data
-    
 
 
 # recommendation system 
