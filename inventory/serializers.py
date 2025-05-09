@@ -243,26 +243,45 @@ class ProductPairingCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("This product pairing already exists.")
             
         return data
+    
+    
 
 class ProductWithPairingsSerializer(serializers.ModelSerializer):
-    """Product serializer that includes paired products"""
+    """Product serializer that includes paired products with their images"""
     paired_products = serializers.SerializerMethodField()
     brand_name = serializers.SerializerMethodField()
+    primary_image = serializers.SerializerMethodField()
     
     class Meta:
         model = Product
         fields = [
             'id', 'product_code', 'name', 'brand_name', 'description', 'category',
             'mrp', 'price', 'discount_price', 'stock', 'is_available',
-            'youtube_url', 'whats_inside', 'paired_products'
+            'youtube_url', 'whats_inside', 'primary_image', 'paired_products'
         ]
         
     def get_brand_name(self, obj):
         return str(obj.brand) if obj.brand else None
+    
+    def get_primary_image(self, obj):
+        # Get the primary image for the product
+        primary_image = obj.images.filter(is_primary=True).first()
+        # If no primary image exists, get the first image
+        if not primary_image:
+            primary_image = obj.images.first()
+        
+        if primary_image:
+            return self.context['request'].build_absolute_uri(primary_image.image.url)
+        return None
         
     def get_paired_products(self, obj):
         pairings = obj.paired_products.filter(is_active=True)
-        return ProductPairingSerializer(pairings, many=True).data
+        serializer = ProductPairingSerializer(
+            pairings, 
+            many=True,
+            context={'request': self.context['request']}  # Pass the request context
+        )
+        return serializer.data
     
 
 

@@ -1491,6 +1491,14 @@ class ProductWithPairingsView(generics.RetrieveAPIView):
             
         return product
     
+    def get_serializer_context(self):
+        """
+        Extra context provided to the serializer class.
+        Ensures the request is passed to nested serializers.
+        """
+        context = super().get_serializer_context()
+        return context
+    
 
 #product recommendation system 
 
