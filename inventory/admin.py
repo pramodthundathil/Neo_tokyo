@@ -14,15 +14,7 @@ class ProductPairingAdmin(admin.ModelAdmin):
     list_editable = ('pairing_strength', 'is_active')
     raw_id_fields = ('primary_product', 'paired_product')
     
-    def primary_product_link(self, obj):
-        url = reverse('admin:inventory_product_change', args=[obj.primary_product.id])
-        return format_html('<a href="{}">{}</a>', url, obj.primary_product.name)
-    primary_product_link.short_description = 'Primary Product'
-    
-    def paired_product_link(self, obj):
-        url = reverse('admin:inventory_product_change', args=[obj.paired_product.id])
-        return format_html('<a href="{}">{}</a>', url, obj.paired_product.name)
-    paired_product_link.short_description = 'Paired Product'
+   
 
 @admin.register(ProductRecommendation)
 class ProductRecommendationAdmin(admin.ModelAdmin):
@@ -34,32 +26,7 @@ class ProductRecommendationAdmin(admin.ModelAdmin):
     raw_id_fields = ('source_product', 'recommended_product')
     actions = ['refresh_recommendations']
     
-    def source_product_link(self, obj):
-        url = reverse('admin:inventory_product_change', args=[obj.source_product.id])
-        return format_html('<a href="{}">{}</a>', url, obj.source_product.name)
-    source_product_link.short_description = 'Source Product'
     
-    def recommended_product_link(self, obj):
-        url = reverse('admin:inventory_product_change', args=[obj.recommended_product.id])
-        return format_html('<a href="{}">{}</a>', url, obj.recommended_product.name)
-    recommended_product_link.short_description = 'Recommended Product'
-    
-    def refresh_recommendations(self, request, queryset):
-        from .recommendation_service import RecommendationService
-        
-        source_products = set()
-        for recommendation in queryset:
-            source_products.add(recommendation.source_product)
-        
-        for product in source_products:
-            RecommendationService.refresh_all_recommendations(product)
-        
-        self.message_user(
-            request, 
-            f"Refreshed recommendations for {len(source_products)} products", 
-            messages.SUCCESS
-        )
-    refresh_recommendations.short_description = "Refresh recommendations for selected products"
 
 @admin.register(ProductView)
 class ProductViewAdmin(admin.ModelAdmin):
@@ -69,7 +36,4 @@ class ProductViewAdmin(admin.ModelAdmin):
     raw_id_fields = ('user', 'product')
     date_hierarchy = 'viewed_at'
     
-    def product_link(self, obj):
-        url = reverse('admin:inventory_product_change', args=[obj.product.id])
-        return format_html('<a href="{}">{}</a>', url, obj.product.name)
-    product_link.short_description = 'Product'
+    
