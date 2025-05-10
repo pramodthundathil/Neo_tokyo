@@ -6,12 +6,13 @@ from inventory.serializers import ProductImageSerializer
 
 class CartItemSerializer(serializers.ModelSerializer):
     product_name = serializers.CharField(source="product.name", read_only=True)
+    product_stock = serializers.CharField(source="product.stock", read_only=True)
     total_price = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
     primary_image = serializers.SerializerMethodField()
 
     class Meta:
         model = CartItem
-        fields = ['id', 'product', 'product_name', 'quantity', 'price', 'total_price', 'primary_image']
+        fields = ['id', 'product', 'product_name',"product_stock", 'quantity', 'price', 'total_price', 'primary_image']
     
     def get_primary_image(self, obj):
         try:
