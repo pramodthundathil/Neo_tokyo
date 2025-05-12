@@ -75,6 +75,7 @@ class Order(models.Model):
 
         is_new = self.pk is None
         super(Order, self).save(*args, **kwargs)
+    payment_method = models.CharField(max_length=50, null=True, blank=True)
 
 
     

@@ -422,7 +422,9 @@ class PaymentCallbackView(APIView):
         order_id = response_data.get("razorpay_order_id")
         payment_id = response_data.get("razorpay_payment_id")
         signature = response_data.get("razorpay_signature")
-        payment_status = response_data.get("payment_status")
+        payment_status = response_data.get("status")
+        payment_method = response_data.get("paymentMethod")
+        print(response_data,"--------------------")
 
         # Validate required fields
         if not order_id or not payment_id or not signature:
@@ -438,9 +440,10 @@ class PaymentCallbackView(APIView):
                 return Response({"error": "Invalid payment signature","payment":False}, status=status.HTTP_400_BAD_REQUEST)
 
             # Update order status based on Razorpay's response
-            if payment_status == 'SUCCESS':
+            if payment_status == 'success':
                 order.order_status = 'PAID'
                 order.payment_status = 'SUCCESS'
+                order.payment_method = payment_method
             else:
                 order.payment_status = 'FAILED'
 
