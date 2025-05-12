@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from .models import *
+from interactions.serializers import ProductRatingSummarySerializer, ProductReviewSerializer, ReviewSerializer
 
 # Tax Serializer
 class TaxSerializer(serializers.ModelSerializer):
@@ -143,14 +144,34 @@ class ProductVariantSerializer(serializers.ModelSerializer):
     relationship_id = serializers.PrimaryKeyRelatedField(
         queryset=VariantRelationshipAttribute.objects.all(), source='relationship', write_only=True
     )
+    # Add variant product primary image
+    variant_primary_image = serializers.SerializerMethodField()
 
     class Meta:
         model = ProductVariant
         fields = [
-            'id', 'product', 'product_id', 'variant_product', 'variant_product_id',
+            'id', 'product', 'product_id', 'variant_product', 'variant_product_id','variant_primary_image',
             'relationship', 'relationship_id', 'relationship_value'
         ]
-
+    def get_variant_primary_image(self, obj):
+        """Get the primary image for the variant product"""
+        primary_image = ProductImage.objects.filter(
+            product=obj.variant_product, 
+            is_primary=True
+        ).first()
+        
+        if primary_image:
+            return ProductImageSerializer(primary_image).data
+        
+        # If no primary image exists, try to get the first image
+        first_image = ProductImage.objects.filter(
+            product=obj.variant_product
+        ).first()
+        
+        if first_image:
+            return ProductImageSerializer(first_image).data
+            
+        return None
         
 # Main Product Serializer
 # class ProductSerializer(serializers.ModelSerializer):
@@ -184,6 +205,10 @@ class ProductSerializer(serializers.ModelSerializer):
     attributes = ProductAttributeValueSerializer(many=True, read_only=True)
     variant_parent = ProductVariantSerializer(many=True, read_only=True)
 
+    # Add reviews to ProductSerializer
+    approved_reviews = serializers.SerializerMethodField()
+    rating_summary = serializers.SerializerMethodField()
+
     class Meta:
         model = Product
         fields = [
@@ -191,15 +216,24 @@ class ProductSerializer(serializers.ModelSerializer):
             'mrp', 'price', 'discount_price', 'stock', 'is_available',
             'price_before_tax', 'tax_amount', 'tax', 'tax_value',
             'youtube_url', 'broacher', "whats_inside", "more_info", 'images', 
-            'videos', 'attributes', 'variant_parent', 'created_at', 'updated_at'
+            'videos', 'attributes', 'variant_parent', 'approved_reviews', 
+            'rating_summary', 'created_at', 'updated_at'
         ]
+
+    def get_approved_reviews(self, obj):
+        """Get only approved reviews for this product"""
+        approved_reviews = obj.reviews.all()
+        return ReviewSerializer(approved_reviews, many=True).data
+    
+    def get_rating_summary(self, obj):
+        """Get rating summary for this product"""
+        try:
+            return ProductRatingSummarySerializer(obj.rating_summary).data
+        except:
+            return None
 
 
 # product pairing serializers 
-
-
-
-
 
 
 class ProductLightSerializer(serializers.ModelSerializer):
