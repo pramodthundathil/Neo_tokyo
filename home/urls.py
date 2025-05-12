@@ -21,6 +21,13 @@ urlpatterns = [
     path("auth/google/", views.GoogleAuthView.as_view(), name="google_auth"),
     path('logout/', views.logout, name='logout'),
 
+    #user management
+
+    path('admin/users/', views.ListAllUsers.as_view(), name='list-users'),
+    path('admin/user/<int:user_id>/toggle-active/',  views.ToggleUserActiveStatus.as_view(), name='toggle-user-active'),
+    path('admin/user/<int:user_id>/delete/',  views.DeleteUserByAdmin.as_view(), name='delete-user-by-admin'),
+    path('user/delete/',  views.DeleteOwnAccount.as_view(), name='delete-own-account'),
+
 
     #testing
 

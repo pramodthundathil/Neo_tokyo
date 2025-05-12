@@ -663,6 +663,103 @@ class UserProfileUpdateView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 
+
+
+# user management admin 
+
+
+class ToggleUserActiveStatus(APIView):
+    """
+    Admin can block or unblock a user by toggling `is_active` status.
+    """
+    permission_classes = [IsAuthenticated,IsAdmin]
+
+    @swagger_auto_schema(
+        operation_description="Toggle the active status of a user (block/unblock).",
+        responses={
+            200: openapi.Response(
+                description="Success message with updated user status.",
+                examples={"application/json": {
+                    "message": "User blocked successfully.",
+                    "user_id": 12,
+                    "is_active": False
+                }}
+            ),
+            404: "User not found"
+        }
+    )
+    def post(self, request, user_id):
+        user = get_object_or_404(CustomUser, id=user_id)
+        user.is_active = not user.is_active
+        user.save()
+        return Response({
+            "message": f"User {'blocked' if not user.is_active else 'unblocked'} successfully.",
+            "user_id": user.id,
+            "is_active": user.is_active
+        }, status=status.HTTP_200_OK)
+    
+
+class DeleteUserByAdmin(APIView):
+    """
+    Admin can delete any user's account using their user ID.
+    """
+    permission_classes = [IsAdmin]
+
+    @swagger_auto_schema(
+        operation_description="Delete a user account by ID. Only accessible to admin.",
+        responses={
+            204: openapi.Response(description="User deleted successfully."),
+            404: "User not found"
+        }
+    )
+    def delete(self, request, user_id):
+        user = get_object_or_404(CustomUser, id=user_id)
+        user.delete()
+        return Response({"message": "User deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
+
+
+
+from rest_framework.permissions import IsAuthenticated
+
+class DeleteOwnAccount(APIView):
+    """
+    Authenticated users can delete their own accounts.
+    """
+    permission_classes = [IsAuthenticated]
+
+    @swagger_auto_schema(
+        operation_description="Allows the currently logged-in user to delete their own account.",
+        responses={
+            204: openapi.Response(description="Account deleted successfully."),
+            401: "Unauthorized"
+        }
+    )
+    def delete(self, request):
+        user = request.user
+        user.delete()
+        return Response({"message": "Your account has been deleted."}, status=status.HTTP_204_NO_CONTENT)
+    
+
+
+from rest_framework.generics import ListAPIView
+
+class ListAllUsers(ListAPIView):
+    """
+    Admin can view the list of all registered users.
+    """
+    permission_classes = [IsAdmin]
+    queryset = CustomUser.objects.all()
+    serializer_class = CustomUserSerializer
+
+    @swagger_auto_schema(
+        operation_description="Retrieve a list of all users. Admin only.",
+        responses={200: CustomUserSerializer(many=True)}
+    )
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
+
+    
+
 @permission_classes([IsAuthenticated])
 @csrf_exempt
 @api_view(["GET"])
@@ -722,3 +819,5 @@ class DeliveryAddressViewSet(viewsets.ModelViewSet):
         address.save()  # The save method will handle updating other addresses
         serializer = self.get_serializer(address)
         return Response(serializer.data)
+    
+
