@@ -235,7 +235,7 @@ def generate_otp(request):
         user = CustomUser.objects.get(email=identifier) if '@' in identifier else CustomUser.objects.get(phone_number=identifier)
         if not user.is_active:
             return Response(
-            {'error': 'This user is in active contact administrator.'},
+            {'error': 'This user is in active contact administrator.',"is_active":False},
             status=status.HTTP_404_NOT_FOUND
         )
 
