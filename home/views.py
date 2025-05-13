@@ -163,17 +163,25 @@ class GoogleAuthView(APIView):
                 user.save()
 
             # Generate JWT token
-            refresh = RefreshToken.for_user(user)
-            return Response({
-                "access": str(refresh.access_token),
-                "refresh": str(refresh),
-                "user": {
+            if user.is_active:
+
+                refresh = RefreshToken.for_user(user)
+                return Response({
+                    "access": str(refresh.access_token),
+                    "refresh": str(refresh),
+                    "user": {
                     "id": user.id,
                     "email": user.email,
                     "name": user.first_name,
                     "profile_picture": user.profile_picture_url
-                }
-            }, status=status.HTTP_200_OK)
+                    }
+                }, status=status.HTTP_200_OK)
+            
+            else:
+                return Response(
+                    {"message": "User is inactive.", "is_active": False},
+                    status=status.HTTP_403_FORBIDDEN
+                )
 
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -222,8 +230,15 @@ def generate_otp(request):
             {'error': 'Email or phone number is required.'},
             status=status.HTTP_400_BAD_REQUEST
         )
+    
     try:
         user = CustomUser.objects.get(email=identifier) if '@' in identifier else CustomUser.objects.get(phone_number=identifier)
+        if not user.is_active:
+            return Response(
+            {'error': 'This user is in active contact administrator.'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+
     except CustomUser.DoesNotExist:
         return Response(
             {'error': 'User does not exist.'},

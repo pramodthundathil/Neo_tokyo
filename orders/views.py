@@ -314,6 +314,11 @@ class CreateSingleProductOrderView(APIView):
                 "currency": "INR",
                 "payment_capture": "1"
             }
+            try:
+                send_order_confirmation(order)
+                print("sending email .....................................")
+            except:
+                pass
 
             raz_order = razorpay_client.order.create(data)
             order.payment_order_id = raz_order["id"]
@@ -444,6 +449,37 @@ from rest_framework import status
 import razorpay
 from .models import Order
 
+
+def send_payment_notification(order, payment_id, status):
+    """
+    Send appropriate email based on payment status
+    """
+    email = order.user.email
+    
+    if status == 'success':
+        mail_subject = 'Payment Successful - NEO TOKYO'
+        template = 'emailbody_payment_success.html'
+        context = {
+            'order': order,
+            'payment_id': payment_id,
+            'order_tracking_url': f"https://neotokyo.com/orders/{order.invoice_number}/track/"
+        }
+    else:  # failed
+        mail_subject = 'Payment Failed - NEO TOKYO'
+        template = 'emailbody_payment_failed.html'
+        context = {
+            'order': order,
+            'payment_id': payment_id,
+            'retry_payment_url': f"https://neotokyo.com/checkout/{order.invoice_number}/"
+        }
+    
+    message = render_to_string(template, context)
+    email = EmailMessage(mail_subject, message, to=[email])
+    email.content_subtype = "html"
+    email.send(fail_silently=True)
+
+
+
 class PaymentCallbackView(APIView):
     def post(self, request):
         response_data = request.data  # Use request.data instead of request.POST
@@ -476,6 +512,10 @@ class PaymentCallbackView(APIView):
                 order.payment_status = 'FAILED'
 
             order.save()
+            
+            # Send appropriate email notification
+
+            send_payment_notification(order, payment_id, payment_status)
             return Response({"message": "Payment status updated","payment":True}, status=status.HTTP_200_OK)
 
         except Order.DoesNotExist:
