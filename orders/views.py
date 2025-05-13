@@ -1,4 +1,8 @@
 from rest_framework.decorators import api_view, permission_classes
+from django.conf import settings
+from django.core.mail import send_mail,EmailMessage
+from django.template.loader import render_to_string
+from django.contrib.sites.shortcuts import get_current_site
 
 
 # This module provides views for managing cart operations, order creation, and payment processing 
@@ -321,6 +325,21 @@ class CreateSingleProductOrderView(APIView):
 
 
 
+def send_order_confirmation(order):
+    email = order.user.email
+    mail_subject = 'Your Order was Created - NEO TOKYO'
+    
+    # Pass the order object to the template
+    message = render_to_string('emailbody_order_creation.html', {
+        'user': order.user,
+        'order': order,
+        'order_payment_url': f"https://neotokyo.com/checkout/{order.invoice_number}/"  # Replace with your actual URL
+    })
+    
+    email = EmailMessage(mail_subject, message, to=[email])
+    email.content_subtype = "html"
+    email.send(fail_silently=True)
+
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
@@ -393,11 +412,20 @@ def create_cart_order(request):
 
             # Clear cart
             cart_items.delete()
+
             data = {
                 "amount": int(order.total_price * 100),
                 "currency": "INR",
                 "payment_capture": "1"
             }
+
+            try:
+                send_order_confirmation(order)
+                print("sending email .....................................")
+            except:
+                pass
+
+
             raz_order = razorpay_client.order.create(data)
             order.payment_order_id = raz_order["id"]
             order.save()
