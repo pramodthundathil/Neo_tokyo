@@ -108,6 +108,7 @@ router.register(r'product_admin', ProductViewSet, basename="product_admin")
 router.register(r'products', ProductMediaViewSet, basename='product-media')
 router.register(r'product-pairings', views.ProductPairingViewSet, basename="product_pairing")
 router.register(r'recommendations', views.ProductRecommendationViewSet, basename="product_recommendation")
+router.register(r'featured-products', views.FeaturedProductViewSet, basename='featured-products')
 
 
 urlpatterns += router.urls

@@ -363,3 +363,43 @@ class RecommendationResultSerializer(serializers.Serializer):
     trending = ProductLightSerializer(many=True, required=False)
     custom = ProductLightSerializer(many=True, required=False)
     recently_viewed = ProductLightSerializer(many=True, required=False)
+
+
+
+# product featured product ...............................................
+
+
+class ProductMinimalSerializer(serializers.ModelSerializer):
+    """Minimal serializer for base Product model"""
+    class Meta:
+        model = Product
+        fields = ['id', 'name', 'price']
+
+
+class FeaturedProductSerializer(serializers.ModelSerializer):
+    """Serializer for customer-facing FeaturedProducts data"""
+    product_details = ProductMinimalSerializer(source='product', read_only=True)
+    
+    class Meta:
+        model = FeaturedProducts
+        fields = [
+            'id', 'featured_name', 'tagline', 'cpu', 'cpu_clock', 
+            'gpu', 'gpu_vram', 'ram', 'storage', 'banner_image',
+            'is_available', 'product_details'
+        ]
+
+
+class FeaturedProductAdminSerializer(serializers.ModelSerializer):
+    """Serializer for admin operations with full details"""
+    product_details = ProductMinimalSerializer(source='product', read_only=True)
+    
+    class Meta:
+        model = FeaturedProducts
+        fields = '__all__'
+        
+    def validate(self, data):
+        """Additional validation for admin operations"""
+        # Example: Ensure product exists if product_id is provided
+        if 'product' in data and data['product'] is None:
+            raise serializers.ValidationError("A valid product must be selected")
+        return data

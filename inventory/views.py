@@ -1649,3 +1649,246 @@ class ProductRecommendationViewSet(viewsets.ModelViewSet):
         
         serializer = ProductLightSerializer(recently_viewed, many=True)
         return Response(serializer.data)
+    
+
+# featured product viewset 
+
+from .models import FeaturedProducts
+from .serializers import FeaturedProductAdminSerializer, FeaturedProductSerializer
+
+class FeaturedProductViewSet(viewsets.ModelViewSet):
+    """
+    API viewset for FeaturedProducts with separate endpoints for admin and customers
+    """
+    queryset = FeaturedProducts.objects.all()
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ['is_featured', 'is_available']
+    search_fields = ['featured_name', 'tagline', 'cpu', 'gpu']
+    ordering_fields = ['id', 'featured_name']
+    ordering = ['-id']  # Default ordering
+    
+    def get_serializer_class(self):
+        """
+        Return appropriate serializer class based on the endpoint or user
+        """
+        if self.action in ['create', 'update', 'partial_update', 'destroy', 'admin_list']:
+            return FeaturedProductAdminSerializer
+        return FeaturedProductSerializer
+    
+    def get_permissions(self):
+        """
+        Instantiate and return the list of permissions that this view requires.
+        """
+        if self.action in ['create', 'update', 'partial_update', 'destroy', 'admin_list']:
+            permission_classes = [IsAdmin]
+        else:
+            permission_classes = [AllowAny]
+        return [permission() for permission in permission_classes]
+    
+    def get_queryset(self):
+        """
+        Filter queryset based on the endpoint or user
+        """
+        # For customer-facing endpoints, only show available products
+        if self.action in ['list', 'retrieve']:
+            return FeaturedProducts.objects.filter(is_available=True)
+        # For admin endpoints, show all products
+        return FeaturedProducts.objects.all()
+    
+    @swagger_auto_schema(
+        operation_summary="List all featured products (customer view)",
+        operation_description="Returns a list of all available featured products for customers",
+        responses={
+            200: FeaturedProductSerializer(many=True),
+            401: "Unauthorized"
+        },
+        tags=['Featured Products - Customer']
+    )
+    def list(self, request, *args, **kwargs):
+        """
+        List all available featured products (customer-facing)
+        """
+        return super().list(request, *args, **kwargs)
+    
+    @swagger_auto_schema(
+        operation_summary="Get featured product details (customer view)",
+        operation_description="Returns details of a specific featured product for customers",
+        responses={
+            200: FeaturedProductSerializer(),
+            404: "Not found"
+        },
+        tags=['Featured Products - Customer']
+    )
+    def retrieve(self, request, *args, **kwargs):
+        """
+        Retrieve a specific featured product (customer-facing)
+        """
+        return super().retrieve(request, *args, **kwargs)
+    
+    @swagger_auto_schema(
+        operation_summary="List all featured products (admin view)",
+        operation_description="Admin endpoint to list all featured products including non-available ones",
+        responses={
+            200: FeaturedProductAdminSerializer(many=True),
+            401: "Unauthorized",
+            403: "Forbidden"
+        },
+        tags=['Featured Products - Admin']
+    )
+    @action(detail=False, methods=['get'], url_path='admin-list')
+    def admin_list(self, request):
+        """
+        List all featured products (admin-only endpoint)
+        """
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+    
+    @swagger_auto_schema(
+        operation_summary="Create a new featured product",
+        operation_description="Admin endpoint to create a new featured product",
+        request_body=FeaturedProductAdminSerializer,
+        responses={
+            201: FeaturedProductAdminSerializer(),
+            400: "Bad request",
+            401: "Unauthorized",
+            403: "Forbidden"
+        },
+        tags=['Featured Products - Admin']
+    )
+    def create(self, request, *args, **kwargs):
+        """
+        Create a new featured product (admin-only)
+        """
+        return super().create(request, *args, **kwargs)
+    
+    @swagger_auto_schema(
+        operation_summary="Update a featured product",
+        operation_description="Admin endpoint to update an existing featured product",
+        request_body=FeaturedProductAdminSerializer,
+        responses={
+            200: FeaturedProductAdminSerializer(),
+            400: "Bad request",
+            401: "Unauthorized",
+            403: "Forbidden",
+            404: "Not found"
+        },
+        tags=['Featured Products - Admin']
+    )
+    def update(self, request, *args, **kwargs):
+        """
+        Update a featured product (admin-only)
+        """
+        return super().update(request, *args, **kwargs)
+    
+    @swagger_auto_schema(
+        operation_summary="Partial update a featured product",
+        operation_description="Admin endpoint to partially update a featured product",
+        request_body=FeaturedProductAdminSerializer,
+        responses={
+            200: FeaturedProductAdminSerializer(),
+            400: "Bad request",
+            401: "Unauthorized",
+            403: "Forbidden",
+            404: "Not found"
+        },
+        tags=['Featured Products - Admin']
+    )
+    def partial_update(self, request, *args, **kwargs):
+        """
+        Partially update a featured product (admin-only)
+        """
+        return super().partial_update(request, *args, **kwargs)
+    
+    @swagger_auto_schema(
+        operation_summary="Delete a featured product",
+        operation_description="Admin endpoint to delete a featured product",
+        responses={
+            204: "No content",
+            401: "Unauthorized",
+            403: "Forbidden",
+            404: "Not found"
+        },
+        tags=['Featured Products - Admin']
+    )
+    def destroy(self, request, *args, **kwargs):
+        """
+        Delete a featured product (admin-only)
+        """
+        return super().destroy(request, *args, **kwargs)
+    
+    @swagger_auto_schema(
+        operation_summary="Toggle featured status",
+        operation_description="Admin endpoint to toggle the featured status of a product",
+        responses={
+            200: openapi.Response(
+                description="Status toggled successfully",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'id': openapi.Schema(type=openapi.TYPE_INTEGER),
+                        'featured_name': openapi.Schema(type=openapi.TYPE_STRING),
+                        'is_featured': openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                        'message': openapi.Schema(type=openapi.TYPE_STRING),
+                    }
+                )
+            ),
+            401: "Unauthorized",
+            403: "Forbidden",
+            404: "Not found"
+        },
+        tags=['Featured Products - Admin']
+    )
+    @action(detail=True, methods=['post'], permission_classes=[IsAdmin])
+    def toggle_featured(self, request, pk=None):
+        """
+        Toggle the featured status of a product (admin-only)
+        """
+        featured_product = self.get_object()
+        featured_product.is_featured = not featured_product.is_featured
+        featured_product.save()
+        
+        return Response({
+            'id': featured_product.id,
+            'featured_name': featured_product.featured_name,
+            'is_featured': featured_product.is_featured,
+            'message': f"Product is {'now' if featured_product.is_featured else 'no longer'} featured"
+        })
+    
+    @swagger_auto_schema(
+        operation_summary="Toggle availability status",
+        operation_description="Admin endpoint to toggle the availability status of a product",
+        responses={
+            200: openapi.Response(
+                description="Status toggled successfully",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'id': openapi.Schema(type=openapi.TYPE_INTEGER),
+                        'featured_name': openapi.Schema(type=openapi.TYPE_STRING),
+                        'is_available': openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                        'message': openapi.Schema(type=openapi.TYPE_STRING),
+                    }
+                )
+            ),
+            401: "Unauthorized",
+            403: "Forbidden",
+            404: "Not found"
+        },
+        tags=['Featured Products - Admin']
+    )
+    @action(detail=True, methods=['post'], permission_classes=[IsAdmin])
+    def toggle_availability(self, request, pk=None):
+        """
+        Toggle the availability status of a product (admin-only)
+        """
+        featured_product = self.get_object()
+        featured_product.is_available = not featured_product.is_available
+        featured_product.save()
+        
+        return Response({
+            'id': featured_product.id,
+            'featured_name': featured_product.featured_name,
+            'is_available': featured_product.is_available,
+            'message': f"Product is {'now' if featured_product.is_available else 'no longer'} available"
+        })

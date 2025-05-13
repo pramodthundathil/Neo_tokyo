@@ -318,3 +318,22 @@ class ProductRecommendation(models.Model):
     
 
 
+
+# featured product modeling
+
+class FeaturedProducts(models.Model):
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    featured_name = models.CharField(max_length=50, help_text="eg . FPS MONGER") 
+    tagline = models.CharField(max_length=100)
+    cpu  = models.CharField(max_length=50)
+    cpu_clock = models.CharField(max_length=100)
+    gpu = models.CharField(max_length=200)
+    gpu_vram = models.CharField(max_length=200)
+    ram = models.CharField(max_length=200)
+    storage = models.CharField(max_length=200)
+    banner_image = models.ImageField(upload_to="feature_product_image")
+    is_available = models.BooleanField(default=True)
+    is_featured = models.BooleanField(default=True)
+
+    def __str__(self):
+        return str(self.product.name) + " " + str(self.featured_name)
