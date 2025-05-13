@@ -84,7 +84,7 @@ class OrderDetailSerializer(serializers.ModelSerializer):
             'id', 'user', 'user_name', 'invoice_number', 'delivery_address',
             'delivery_address_details', 'total_price', 'total_tax', 
             'price_before_tax', 'total_discount', 'bill_discount', 
-            'product_discount', 'payment_status','payment_method', 'order_status', 
+            'product_discount', 'payment_status','payment_method', 'order_status','delivery_status', 
             'payment_order_id', 'created_at', 'updated_at', 'items'
         ]
         read_only_fields = fields
@@ -110,7 +110,7 @@ class OrderDetailSerializer(serializers.ModelSerializer):
 class OrderUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Order
-        fields = ['payment_status', 'order_status', 'bill_discount', 'delivery_address']
+        fields = ['payment_status', 'order_status','delivery_status', 'bill_discount', 'delivery_address']
     
     def update(self, instance, validated_data):
         instance = super().update(instance, validated_data)

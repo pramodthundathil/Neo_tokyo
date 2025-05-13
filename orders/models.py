@@ -55,7 +55,18 @@ class Order(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-
+    delivery_status = models.CharField(
+        max_length=20,
+        choices=[
+            ('PENDING', 'Pending'),
+            ('SHIPPED', 'Shipped'),
+            ('IN_TRANSIT', 'In Transit'),
+            ('DELIVERED', 'Delivered'),
+            ('CANCELLED', 'Cancelled'),
+            ('RETURNED', 'Returned')
+        ],
+        default='PENDING'
+    )
     payment_status = models.CharField(
         max_length=20,
         choices=[('SUCCESS', 'Success'), ('FAILED', 'Failed'), ('PENDING', 'Pending')],
