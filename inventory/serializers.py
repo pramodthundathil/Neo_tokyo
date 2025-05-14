@@ -373,7 +373,7 @@ class ProductMinimalSerializer(serializers.ModelSerializer):
     """Minimal serializer for base Product model"""
     class Meta:
         model = Product
-        fields = ['id', 'name', 'price']
+        fields = ['id', 'name', 'price', "mrp"]
 
 
 class FeaturedProductSerializer(serializers.ModelSerializer):
