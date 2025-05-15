@@ -458,7 +458,7 @@ def send_payment_notification(order, payment_id, status):
     
     if status == 'success':
         mail_subject = 'Payment Successful - NEO TOKYO'
-        template = 'emailbody_payment_success.html'
+        template = 'emailbody_payment_confirmation.html'
         context = {
             'order': order,
             'payment_id': payment_id,
