@@ -239,10 +239,11 @@ class ProductSerializer(serializers.ModelSerializer):
 class ProductLightSerializer(serializers.ModelSerializer):
     """Lightweight Product serializer for nested representations"""
     brand_name = serializers.SerializerMethodField()
+    images = ProductImageSerializer(many=True, read_only=True)
     
     class Meta:
         model = Product
-        fields = ['id', 'product_code', 'name', 'brand_name', 'price', 'mrp', 'discount_price', 'is_available']
+        fields = ['id', 'product_code', 'name', 'brand_name', 'price', 'mrp', 'discount_price', "images", 'is_available']
         
     def get_brand_name(self, obj):
         return str(obj.brand) if obj.brand else None
