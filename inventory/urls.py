@@ -91,6 +91,7 @@ urlpatterns = [
     ## product pairing 
     path('products/<str:pk>/with-pairings/', views.ProductWithPairingsView.as_view(), name='product-with-pairings'),
     path('products/<str:pk>/recommendations/', views.ProductWithPairingsView.as_view(), name='product-recommendations'),
+    path('customer/purchased-products/', views.CustomerPurchasedProductsView.as_view(), name='customer-purchased-products'),
 
 ]
 
@@ -109,6 +110,9 @@ router.register(r'products', ProductMediaViewSet, basename='product-media')
 router.register(r'product-pairings', views.ProductPairingViewSet, basename="product_pairing")
 router.register(r'recommendations', views.ProductRecommendationViewSet, basename="product_recommendation")
 router.register(r'featured-products', views.FeaturedProductViewSet, basename='featured-products')
+router.register(r'admin/product-updates', views.AdminProductUpdateViewSet, basename='admin-product-updates')
+router.register(r'product-updates', views.CustomerProductUpdateViewSet, basename='product-updates')
+router.register(r'update-notifications', views.ProductUpdateNotificationViewSet, basename='update-notifications')
 
 
 urlpatterns += router.urls

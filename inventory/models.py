@@ -337,3 +337,103 @@ class FeaturedProducts(models.Model):
 
     def __str__(self):
         return str(self.product.name) + " " + str(self.featured_name)
+
+
+
+
+# product update and notification models 
+
+from django.contrib.auth import get_user_model
+from django.utils import timezone
+from django.core.mail import send_mail
+from django.template.loader import render_to_string
+from django.conf import settings
+
+CustomUser = get_user_model()
+
+class ProductUpdate(models.Model):
+    """Model to store updates for products like drivers, firmware, etc."""
+    product = models.ForeignKey('Product', on_delete=models.CASCADE, related_name='updates')
+    name = models.CharField(max_length=255)
+    version = models.CharField(max_length=50)
+    description = models.TextField()
+    update_file = models.FileField(upload_to='product_updates/%Y/%m/')
+    download_url = models.URLField(blank=True, null=True)
+    release_date = models.DateTimeField(default=timezone.now)
+    is_critical = models.BooleanField(default=False)
+    
+    class Meta:
+        ordering = ['-release_date']
+        unique_together = ['product', 'version']
+    
+    def __str__(self):
+        return f"{self.product.name} - {self.name} v{self.version}"
+    
+    def save(self, *args, **kwargs):
+        is_new = self.pk is None
+        super().save(*args, **kwargs)
+        
+        # If this is a new update, notify users who purchased this product
+        if is_new:
+            self.notify_customers()
+    
+    def notify_customers(self):
+        """Notify all customers who purchased this product"""
+        # Find all orders containing this product
+        from orders.models import Order, OrderItem
+        
+        # Get all order items containing this product
+        order_items = OrderItem.objects.filter(product=self.product)
+        
+        # Get unique users who purchased this product 
+        customers = CustomUser.objects.filter(
+            orders__items__product=self.product,
+            orders__payment_status='SUCCESS'  # Only consider successful orders
+        ).distinct()
+        
+        # Create notifications for each customer
+        for customer in customers:
+            ProductUpdateNotification.objects.create(
+                user=customer,
+                product_update=self,
+                is_read=False
+            )
+            
+            # Send email notification if settings allow it
+            if hasattr(settings, 'SEND_UPDATE_EMAILS') and settings.SEND_UPDATE_EMAILS:
+                self._send_email_notification(customer)
+    
+    def _send_email_notification(self, user):
+        """Send email notification to a user about this update"""
+        subject = f"New update available for your {self.product.name}"
+        context = {
+            'user': user,
+            'product': self.product,
+            'update': self,
+        }
+        html_message = render_to_string('emails/product_update_notification.html', context)
+        plain_message = render_to_string('emails/product_update_notification.txt', context)
+        
+        send_mail(
+            subject=subject,
+            message=plain_message,
+            html_message=html_message,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[user.email],
+            fail_silently=True,
+        )
+
+
+class ProductUpdateNotification(models.Model):
+    """Model to store notifications about product updates for users"""
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='product_update_notifications')
+    product_update = models.ForeignKey(ProductUpdate, on_delete=models.CASCADE, related_name='notifications')
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_read = models.BooleanField(default=False)
+    
+    class Meta:
+        ordering = ['-created_at']
+        unique_together = ['user', 'product_update']
+    
+    def __str__(self):
+        return f"Notification for {self.user} - {self.product_update}"

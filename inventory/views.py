@@ -30,7 +30,10 @@ from .serializers import (
                     AttributeValueDetail,
                     AttributeValueDetailSerializer,
                     VariantRelationshipAttributeSerializer,
-                    ProductAttributeCategorySerializerForSort
+                    ProductAttributeCategorySerializerForSort,
+                    ProductUpdateSerializer,
+                    ProductUpdateNotificationSerializer,
+                    ProductLightMyProductSerializer
 
                 )
 from .models import (Product,
@@ -45,7 +48,10 @@ from .models import (Product,
                       ProductAttributeValue,
 
                       ProductVariant,
-                      VariantRelationshipAttribute)
+                      VariantRelationshipAttribute,
+                      ProductUpdate,
+                      ProductUpdateNotification
+                      )
 
 
 from rest_framework.exceptions import PermissionDenied
@@ -1892,3 +1898,240 @@ class FeaturedProductViewSet(viewsets.ModelViewSet):
             'is_available': featured_product.is_available,
             'message': f"Product is {'now' if featured_product.is_available else 'no longer'} available"
         })
+    
+
+# all viewsets for product drivers update list
+from orders.models import Order, OrderItem
+
+class CustomerPurchasedProductsView(APIView):
+    """
+    View to get unique products purchased by a customer from successful orders
+    """
+    permission_classes = [IsAuthenticated]
+    
+    @swagger_auto_schema(
+        operation_summary="Get Customer's Purchased Products",
+        operation_description="""
+        Returns a list of unique products that the authenticated customer has purchased
+        from orders with 'SUCCESS' payment status. Even if a product was purchased 
+        multiple times, it will appear only once in the results.
+        """,
+        responses={
+            200: openapi.Response(
+                description="List of unique purchased products",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_ARRAY,
+                    items=openapi.Schema(
+                        type=openapi.TYPE_OBJECT,
+                        properties={
+                            'id': openapi.Schema(type=openapi.TYPE_INTEGER, description='Product ID'),
+                            'product_code': openapi.Schema(type=openapi.TYPE_STRING, description='Unique product code'),
+                            'name': openapi.Schema(type=openapi.TYPE_STRING, description='Product name'),
+                            'brand_name': openapi.Schema(type=openapi.TYPE_STRING, description='Brand name'),
+                            'price': openapi.Schema(type=openapi.TYPE_NUMBER, description='Current price'),
+                            'mrp': openapi.Schema(type=openapi.TYPE_NUMBER, description='Maximum retail price'),
+                            'discount_price': openapi.Schema(type=openapi.TYPE_NUMBER, description='Discount percentage'),
+                            'is_available': openapi.Schema(type=openapi.TYPE_BOOLEAN, description='Product availability status'),
+                            'primary_image': openapi.Schema(
+                                type=openapi.TYPE_OBJECT,
+                                properties={
+                                    'id': openapi.Schema(type=openapi.TYPE_INTEGER, description='Image ID'),
+                                    'image': openapi.Schema(type=openapi.TYPE_STRING, description='Relative image URL'),
+                                    'image_url': openapi.Schema(type=openapi.TYPE_STRING, description='Absolute image URL'),
+                                    'is_primary': openapi.Schema(type=openapi.TYPE_BOOLEAN, description='Whether this is the primary image')
+                                }
+                            ),
+                            'attributes': openapi.Schema(
+                                type=openapi.TYPE_ARRAY,
+                                description='Product attributes',
+                                items=openapi.Schema(type=openapi.TYPE_OBJECT)
+                            )
+                        }
+                    )
+                )
+            ),
+            401: openapi.Response(description="Authentication credentials were not provided or are invalid"),
+        },
+        tags=['Customer', 'Products']
+    )
+    def get(self, request):
+        # Get all successful orders for the authenticated user
+        successful_orders = Order.objects.filter(
+            user=request.user,
+            payment_status='SUCCESS'
+        )
+        
+        # Get all product IDs from these orders (may contain duplicates)
+        purchased_product_ids = OrderItem.objects.filter(
+            order__in=successful_orders
+        ).values_list('product_id', flat=True).distinct()
+        
+        # Get the unique products
+        products = Product.objects.filter(id__in=purchased_product_ids)
+        
+        # Serialize the products with the lightweight serializer
+        serializer = ProductLightMyProductSerializer(
+            products, 
+            many=True,
+            context={'request': request}
+        )
+        
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+
+class AdminProductUpdateViewSet(viewsets.ModelViewSet):
+    """
+    API endpoint for admins to create and manage product updates.
+    Only staff/admin users can access this endpoint.
+    """
+    queryset = ProductUpdate.objects.all()
+    serializer_class = ProductUpdateSerializer
+    permission_classes = [IsAuthenticated, IsAdmin]
+
+    @swagger_auto_schema(
+        operation_summary="List all  Driver for Devices (admin view)",
+        operation_description="Admin endpoint to Driver for Devices create",
+        tags=['Driver Update - Admin']
+    )
+    def perform_create(self, serializer):
+        """Create a new product update"""
+        serializer.save()
+        # The notification logic is handled in the model's save method
+    
+
+    @swagger_auto_schema(
+        operation_summary="Filters  Driver for Devices (admin view)",
+        operation_description="Admin endpoint to Driver for Devices create",
+        tags=['Driver Update - Admin']
+    )
+    @action(detail=False, methods=['get'])
+    def product_filters(self, request):
+        """Return the list of products that can have updates"""
+        from .models import Product
+        products = Product.objects.filter(is_available=True).values('id', 'name', 'brand__name')
+        return Response(products)
+
+
+class CustomerProductUpdateViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    API endpoint for customers to view product updates.
+    Customers can only see updates for products they've purchased.
+    """
+    serializer_class = ProductUpdateSerializer
+    permission_classes = [IsAuthenticated]
+    
+
+    @swagger_auto_schema(
+        operation_summary="List all  Driver for Devices (User view)",
+        operation_description="user endpoint to Driver for Devices create",
+        tags=['Driver Update - User']
+    )
+    def get_queryset(self):
+        """Limit updates to products the user has purchased"""
+        user = self.request.user
+        
+        # If staff or admin, show all updates
+        if user.is_staff or user.is_superuser:
+            return ProductUpdate.objects.all()
+        
+        # For regular users, show only updates for products they've purchased
+        return ProductUpdate.objects.filter(
+            product__in=user.orders.filter(payment_status='SUCCESS').values_list(
+                'items__product', flat=True
+            ).distinct()
+        )
+    
+
+    @swagger_auto_schema(
+        operation_summary="List all  Driver for Devices (User view)",
+        operation_description="User endpoint to Driver for Devices create",
+        tags=['Driver Update - User']
+    )
+    @action(detail=False, methods=['get'])
+    def my_product_updates(self, request):
+        """Return updates only for products the user has purchased"""
+        updates = self.get_queryset()
+        serializer = self.get_serializer(updates, many=True)
+        return Response(serializer.data)
+    
+
+    @swagger_auto_schema(
+        operation_summary="List all  Driver for Devices (User view)",
+        operation_description="User endpoint to Driver for Devices create",
+        tags=['Driver Update - User']
+    )
+    @action(detail=True, methods=['get'])
+    def mark_as_read(self, request, pk=None):
+        """Mark a product update notification as read"""
+        update = self.get_object()
+        user = request.user
+        
+        notification = ProductUpdateNotification.objects.filter(
+            user=user, product_update=update
+        ).first()
+        
+        if notification:
+            notification.is_read = True
+            notification.save()
+            return Response({"status": "notification marked as read"})
+        else:
+            return Response(
+                {"error": "No notification found for this update"}, 
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+
+class ProductUpdateNotificationViewSet(viewsets.ReadOnlyModelViewSet):
+    """API endpoint for product update notifications"""
+    serializer_class = ProductUpdateNotificationSerializer
+    permission_classes = [IsAuthenticated]
+    
+
+    @swagger_auto_schema(
+        operation_summary="Driver Update Notification get all notifications",
+        operation_description="All notification",
+        tags=['Driver Update Notification']
+    )
+    def get_queryset(self):
+        """Return only notifications for the current user"""
+        return ProductUpdateNotification.objects.filter(user=self.request.user)
+    
+
+    @swagger_auto_schema(
+        operation_summary="Driver Update Notification get all unread notifications",
+        operation_description="Unread notification",
+        tags=['Driver Update Notification']
+    )
+    @action(detail=False, methods=['get'])
+    def unread(self, request):
+        """Return only unread notifications"""
+        unread = self.get_queryset().filter(is_read=False)
+        serializer = self.get_serializer(unread, many=True)
+        return Response(serializer.data)
+    
+
+    @swagger_auto_schema(
+        operation_summary="Driver Update Notification get all notifications",
+        operation_description="All notification mark as read",
+        tags=['Driver Update Notification']
+    )
+    @action(detail=True, methods=['post'])
+    def mark_read(self, request, pk=None):
+        """Mark a notification as read"""
+        notification = self.get_object()
+        notification.is_read = True
+        notification.save()
+        return Response({"status": "notification marked as read"})
+    
+
+    @swagger_auto_schema(
+        operation_summary="Driver Update Notification get all as read notifications",
+        operation_description="mar all as read notification",
+        tags=['Driver Update Notification']
+    )
+    @action(detail=False, methods=['post'])
+    def mark_all_read(self, request):
+        """Mark all notifications as read"""
+        self.get_queryset().update(is_read=True)
+        return Response({"status": "all notifications marked as read"})

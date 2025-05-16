@@ -404,3 +404,97 @@ class FeaturedProductAdminSerializer(serializers.ModelSerializer):
         if 'product' in data and data['product'] is None:
             raise serializers.ValidationError("A valid product must be selected")
         return data
+
+
+
+#product driver update serializers
+
+
+class ProductLightMyProductSerializer(serializers.ModelSerializer):
+    """Lightweight Product serializer for nested representations"""
+    brand_name = serializers.SerializerMethodField()
+    primary_image = serializers.SerializerMethodField()
+    attributes = ProductAttributeValueSerializer(many=True, read_only=True)
+    
+    class Meta:
+        model = Product
+        fields = ['id', 'product_code', 'name', 'brand_name', 'attributes', 'price', 'mrp', 'discount_price', 'primary_image', 'is_available']
+        
+    def get_brand_name(self, obj):
+        return str(obj.brand) if obj.brand else None
+    
+    def get_primary_image(self, obj):
+        """Get only the primary image for the product"""
+        request = self.context.get('request')
+        primary_image = obj.images.filter(is_primary=True).first()
+        
+        if not primary_image:
+            # Fallback to first image if there's no primary image
+            primary_image = obj.images.first()
+            
+        if request and primary_image and primary_image.image:
+            return {
+                'id': primary_image.id,
+                'image': primary_image.image.url,
+                'image_url': request.build_absolute_uri(primary_image.image.url),
+                'is_primary': primary_image.is_primary
+            }
+        return None
+    
+
+from .models import ProductUpdate, ProductUpdateNotification
+
+class ProductUpdateSerializer(serializers.ModelSerializer):
+    product_name = serializers.CharField(source='product.name', read_only=True)
+    product_brand = serializers.CharField(source='product.brand', read_only=True)
+    days_ago = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = ProductUpdate
+        fields = [
+            'id', 'product', 'product_name', 'product_brand', 
+            'name', 'version', 'description', 'update_file', 
+            'download_url', 'release_date', 'is_critical', 'days_ago'
+        ]
+    
+    def get_days_ago(self, obj):
+        """Return days since this update was released"""
+        from django.utils import timezone
+        import datetime
+        
+        now = timezone.now()
+        delta = now - obj.release_date
+        
+        if delta.days < 1:
+            hours = delta.seconds // 3600
+            if hours < 1:
+                return "Just now"
+            return f"{hours} hour{'s' if hours > 1 else ''} ago"
+        elif delta.days == 1:
+            return "Yesterday"
+        elif delta.days < 7:
+            return f"{delta.days} days ago"
+        elif delta.days < 30:
+            weeks = delta.days // 7
+            return f"{weeks} week{'s' if weeks > 1 else ''} ago"
+        else:
+            months = delta.days // 30
+            return f"{months} month{'s' if months > 1 else ''} ago"
+
+
+class ProductUpdateNotificationSerializer(serializers.ModelSerializer):
+    product_name = serializers.CharField(source='product_update.product.name', read_only=True)
+    update_name = serializers.CharField(source='product_update.name', read_only=True)
+    update_version = serializers.CharField(source='product_update.version', read_only=True)
+    update_description = serializers.CharField(source='product_update.description', read_only=True)
+    download_url = serializers.URLField(source='product_update.download_url', read_only=True)
+    is_critical = serializers.BooleanField(source='product_update.is_critical', read_only=True)
+    
+    class Meta:
+        model = ProductUpdateNotification
+        fields = [
+            'id', 'user', 'product_update', 'product_name', 'update_name',
+            'update_version', 'update_description', 'download_url',
+            'is_critical', 'created_at', 'is_read'
+        ]
+        read_only_fields = ['user', 'product_update', 'created_at']
