@@ -357,7 +357,7 @@ class ProductUpdate(models.Model):
     name = models.CharField(max_length=255)
     version = models.CharField(max_length=50)
     description = models.TextField()
-    update_file = models.FileField(upload_to='product_updates/%Y/%m/')
+    update_file = models.FileField(upload_to='product_updates/%Y/%m/',blank=True, null=True)
     download_url = models.URLField(blank=True, null=True)
     release_date = models.DateTimeField(default=timezone.now)
     is_critical = models.BooleanField(default=False)
