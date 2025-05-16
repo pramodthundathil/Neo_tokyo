@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from .models import Review, ReviewImage, ProductRatingSummary
 from inventory.models import Product
+from home.models import CustomUser
 
 class ReviewImageSerializer(serializers.ModelSerializer):
     class Meta:
@@ -11,7 +12,9 @@ class ReviewImageSerializer(serializers.ModelSerializer):
 
 class ReviewSerializer(serializers.ModelSerializer):
     images = ReviewImageSerializer(many=True, required=False, read_only=True)
-    user = serializers.ReadOnlyField(source='user.username')
+    user = serializers.ReadOnlyField(source='user.first_name')
+    profile_image = serializers.ImageField(source="user.profile_picture", read_only=True)
+    profile_image_url = serializers.URLField(source ='user.profile_picture_url', read_only=True )
     uploaded_images = serializers.ListField(
         child=serializers.ImageField(max_length=1000000, allow_empty_file=False, use_url=False),
         write_only=True,
@@ -22,11 +25,11 @@ class ReviewSerializer(serializers.ModelSerializer):
     class Meta:
         model = Review
         fields = [
-            'id', 'product', 'user', 'rating', 'title', 'comment',
+            'id', 'product', 'user',"profile_image","profile_image_url", 'rating', 'title', 'comment',
             'created_at', 'updated_at', 'is_verified_purchase', 
             'is_approved', 'images', 'uploaded_images'
         ]
-        read_only_fields = ['id', 'created_at', 'updated_at', 'user', 'is_verified_purchase', 'is_approved']
+        read_only_fields = ['id', 'created_at', 'updated_at', 'user','profile_image','profile_image_url', 'is_verified_purchase', 'is_approved']
     
     def validate_product(self, value):
         if not value.is_available:
