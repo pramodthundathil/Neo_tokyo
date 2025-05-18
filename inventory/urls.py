@@ -93,6 +93,11 @@ urlpatterns = [
     path('products/<str:pk>/recommendations/', views.ProductWithPairingsView.as_view(), name='product-recommendations'),
     path('customer/purchased-products/', views.CustomerPurchasedProductsView.as_view(), name='customer-purchased-products'),
 
+    #driver updates 
+    path('products/<int:product_id>/updates/', 
+         views.SingleProductDriverUpdatesView.as_view({'get': 'list'}), 
+         name='product-updates'),
+
 ]
 
 

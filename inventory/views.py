@@ -2080,6 +2080,47 @@ class CustomerProductUpdateViewSet(viewsets.ReadOnlyModelViewSet):
                 {"error": "No notification found for this update"}, 
                 status=status.HTTP_404_NOT_FOUND
             )
+        
+
+class SingleProductDriverUpdatesView(viewsets.ReadOnlyModelViewSet):
+    """
+    API endpoint to get all updates for a single product.
+    """
+    serializer_class = ProductUpdateSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def get_queryset(self):
+        """Get updates for the specified product"""
+        product_id = self.kwargs.get('product_id')
+        return ProductUpdate.objects.filter(product_id=product_id)
+    
+    @swagger_auto_schema(
+        operation_summary="Get all updates for a single product",
+        operation_description="Returns all updates for the specified product",
+        tags=['Product Updates']
+    )
+    def list(self, request, product_id=None):
+        """Get all updates for a specific product ID"""
+        user = request.user
+        
+        # For regular users, check if they purchased the product
+        if not (user.is_staff or user.is_superuser):
+            has_purchased = user.orders.filter(
+                payment_status='SUCCESS',
+                items__product=product_id
+            ).exists()
+            
+            if not has_purchased:
+                return Response(
+                    {"error": "You do not have access to updates for this product"}, 
+                    status=status.HTTP_403_FORBIDDEN
+                )
+        
+        # Get updates for the specified product
+        updates = self.get_queryset()
+        serializer = self.get_serializer(updates, many=True)
+        
+        return Response(serializer.data)
 
 
 class ProductUpdateNotificationViewSet(viewsets.ReadOnlyModelViewSet):
