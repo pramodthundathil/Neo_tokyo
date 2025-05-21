@@ -42,6 +42,7 @@ class ProductForm(forms.ModelForm):
             'brand': forms.Select(attrs={'class': 'form-control', 'id': 'product_brand'}),
             'description': forms.Textarea(attrs={'class': 'form-control', 'id': 'product_description'}),
             'category': forms.Select(attrs={'class': 'form-control', 'id': 'product_category'}),
+            'subcategory': forms.Select(attrs={'class': 'form-control', 'id': 'product_subcategory'}),
             'mrp': forms.NumberInput(attrs={'class': 'form-control', 'id': 'product_mrp'}),
             'price': forms.NumberInput(attrs={'class': 'form-control', 'id': 'product_price'}),
             'discount_price': forms.NumberInput(attrs={'class': 'form-control', 'id': 'product_discount_price'}),

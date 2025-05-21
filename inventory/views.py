@@ -21,6 +21,7 @@ from .serializers import (
                     TaxSerializer,
 
                     CategorySerializer,
+                    SubCategorySerializer,
                     BrandSerializer,
                     
                     ProductAttributeSerializer,
@@ -38,6 +39,7 @@ from .serializers import (
                 )
 from .models import (Product,
                       Category, 
+                      SubCategory,
                       Tax, 
                       ProductImage, 
                       ProductVideo, 
@@ -558,6 +560,26 @@ class CategoryViewSet(viewsets.ModelViewSet):
             status=status.HTTP_204_NO_CONTENT,
         )
 
+
+
+
+class SubCategoryViewSet(viewsets.ModelViewSet):
+    """
+    API endpoint for SubCategories.
+    Allows any user to perform GET requests, but requires authentication for other actions.
+    """
+    queryset = SubCategory.objects.all()
+    serializer_class = SubCategorySerializer
+    
+    def get_permissions(self):
+        """
+        Allow any user to access GET methods, but require authentication for other methods.
+        """
+        if self.action in ['list', 'retrieve']:
+            permission_classes = [AllowAny]
+        else:
+            permission_classes = [IsAuthenticated, IsAdmin]
+        return [permission() for permission in permission_classes]
 #=========================================================CATEGORY ENTERING END==========================
 
 #=========================================================================================================

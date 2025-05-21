@@ -11,6 +11,7 @@ from .views import (
     ProductVariantViewSet,
     ProductViewSet,
     ProductMediaViewSet,
+    SubCategoryViewSet,
     )
 
 router = DefaultRouter()
@@ -101,7 +102,9 @@ urlpatterns = [
 ]
 
 
-router.register(r'categories', CategoryViewSet, basename='categories')
+router.register(r'categories', CategoryViewSet, basename='categories'),
+router.register(r'subcategories', SubCategoryViewSet, basename='subcategories'),
+
 router.register(r'taxes', TaxViewSet, basename='taxes')
 router.register(r'brands', BrandViewSet, basename='brands'),
 router.register(r'productattribute_category', ProductAttributeCategorySerializerViewSet, basename='productattribute_category'),

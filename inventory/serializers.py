@@ -57,6 +57,11 @@ class CategorySerializer(serializers.ModelSerializer):
         model = Category
         fields = ["id","name", "description"]  
 
+class SubCategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SubCategory
+        fields = ['id', 'name', 'description']
+
 
 class BrandSerializer(serializers.ModelSerializer):
     class Meta:
@@ -199,6 +204,7 @@ from .models import Product, Brand, Category
 
 class ProductSerializer(serializers.ModelSerializer):
     category = serializers.StringRelatedField(read_only=True)
+    subcategory = serializers.StringRelatedField(read_only=True)
     brand = serializers.StringRelatedField(read_only=True)
     images = ProductImageSerializer(many=True, read_only=True)
     videos = ProductVideoSerializer(many=True, read_only=True)
@@ -212,7 +218,7 @@ class ProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = [
-            'id', 'product_code', 'name', 'brand', 'description', 'category', 
+            'id', 'product_code', 'name', 'brand', 'description', 'category','subcategory', 
             'mrp', 'price', 'discount_price', 'stock', 'is_available',
             'price_before_tax', 'tax_amount', 'tax', 'tax_value',
             'youtube_url', 'broacher', "whats_inside", "more_info", 'images', 
