@@ -203,25 +203,13 @@ from rest_framework import serializers
 from .models import Product, Brand, Category
 
 class ProductSerializer(serializers.ModelSerializer):
-    category = serializers.StringRelatedField(read_only=True)
-    subcategory = serializers.StringRelatedField(read_only=True)
-    brand = serializers.StringRelatedField(read_only=True)
+    category = serializers.SerializerMethodField()
+    subcategory = serializers.SerializerMethodField()
+    brand = serializers.SerializerMethodField()
     images = ProductImageSerializer(many=True, read_only=True)
     videos = ProductVideoSerializer(many=True, read_only=True)
     attributes = ProductAttributeValueSerializer(many=True, read_only=True)
     variant_parent = ProductVariantSerializer(many=True, read_only=True)
-
-
-     # Write fields (for POST/PUT requests)
-    category_id = serializers.PrimaryKeyRelatedField(
-        source='category', queryset=Category.objects.all(), write_only=True, required=False
-    )
-    subcategory_id = serializers.PrimaryKeyRelatedField(
-        source='subcategory', queryset=SubCategory.objects.all(), write_only=True, required=False
-    )
-    brand_id = serializers.PrimaryKeyRelatedField(
-        source='brand', queryset=Brand.objects.all(), write_only=True, required=False
-    )
 
     # Add reviews to ProductSerializer
     approved_reviews = serializers.SerializerMethodField()
@@ -230,7 +218,7 @@ class ProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = [
-            'id', 'product_code', 'name', 'brand', 'description','warranty_info', 'category',"category_id",'subcategory', 'subcategory_id','brand_id',
+            'id', 'product_code', 'name', 'brand', 'description','warranty_info', 'category','subcategory', 
             'mrp', 'price', 'discount_price', 'stock', 'is_available',
             'price_before_tax', 'tax_amount', 'tax', 'tax_value',
             'youtube_url', 'broacher', "whats_inside", "more_info", 'images', 
@@ -238,6 +226,18 @@ class ProductSerializer(serializers.ModelSerializer):
             'rating_summary', 'created_at', 'updated_at'
         ]
 
+    def get_category(self, obj):
+        """Return string representation for GET, accept ID for POST/PUT"""
+        return str(obj.category) if obj.category else None
+
+    def get_subcategory(self, obj):
+        """Return string representation for GET, accept ID for POST/PUT"""
+        return str(obj.subcategory) if obj.subcategory else None
+
+    def get_brand(self, obj):
+        """Return string representation for GET, accept ID for POST/PUT"""
+        return str(obj.brand) if obj.brand else None
+    
     def get_approved_reviews(self, obj):
         """Get only approved reviews for this product"""
         approved_reviews = obj.reviews.all()
@@ -249,7 +249,31 @@ class ProductSerializer(serializers.ModelSerializer):
             return ProductRatingSummarySerializer(obj.rating_summary).data
         except:
             return None
-
+            
+    def to_internal_value(self, data):
+        """Handle incoming data during create/update"""
+        internal_value = super().to_internal_value(data)
+        
+        # Handle category, subcategory, and brand IDs
+        if 'category' in data:
+            try:
+                internal_value['category'] = Category.objects.get(pk=data['category'])
+            except (Category.DoesNotExist, ValueError, TypeError):
+                raise serializers.ValidationError({'category': 'Invalid category ID'})
+                
+        if 'subcategory' in data:
+            try:
+                internal_value['subcategory'] = SubCategory.objects.get(pk=data['subcategory'])
+            except (SubCategory.DoesNotExist, ValueError, TypeError):
+                raise serializers.ValidationError({'subcategory': 'Invalid subcategory ID'})
+                
+        if 'brand' in data:
+            try:
+                internal_value['brand'] = Brand.objects.get(pk=data['brand'])
+            except (Brand.DoesNotExist, ValueError, TypeError):
+                raise serializers.ValidationError({'brand': 'Invalid brand ID'})
+                
+        return internal_value
 
 # product pairing serializers 
 
