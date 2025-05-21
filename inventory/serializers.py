@@ -211,6 +211,18 @@ class ProductSerializer(serializers.ModelSerializer):
     attributes = ProductAttributeValueSerializer(many=True, read_only=True)
     variant_parent = ProductVariantSerializer(many=True, read_only=True)
 
+
+     # Write fields (for POST/PUT requests)
+    category_id = serializers.PrimaryKeyRelatedField(
+        source='category', queryset=Category.objects.all(), write_only=True, required=False
+    )
+    subcategory_id = serializers.PrimaryKeyRelatedField(
+        source='subcategory', queryset=SubCategory.objects.all(), write_only=True, required=False
+    )
+    brand_id = serializers.PrimaryKeyRelatedField(
+        source='brand', queryset=Brand.objects.all(), write_only=True, required=False
+    )
+
     # Add reviews to ProductSerializer
     approved_reviews = serializers.SerializerMethodField()
     rating_summary = serializers.SerializerMethodField()
@@ -218,7 +230,7 @@ class ProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = [
-            'id', 'product_code', 'name', 'brand', 'description','warranty_info', 'category','subcategory', 
+            'id', 'product_code', 'name', 'brand', 'description','warranty_info', 'category',"category_id",'subcategory', 'subcategory_id','brand_id',
             'mrp', 'price', 'discount_price', 'stock', 'is_available',
             'price_before_tax', 'tax_amount', 'tax', 'tax_value',
             'youtube_url', 'broacher', "whats_inside", "more_info", 'images', 
