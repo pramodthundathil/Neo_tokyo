@@ -64,6 +64,7 @@ class Product(models.Model):
     broacher = models.FileField(upload_to="product_broacher")
     whats_inside = models.TextField()
     more_info = models.URLField(null=True, blank=True)
+    warranty_info = models.CharField(max_length=1000, null=True, blank=True)
 
     # Tax Calculations
     price_before_tax = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, default=Decimal('0.00'))
