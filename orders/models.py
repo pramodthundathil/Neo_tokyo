@@ -102,6 +102,7 @@ class Order(models.Model):
             # Apply bill discount (if any)
             self.total_discount = Decimal(self.product_discount) + Decimal(self.bill_discount)
             self.total_price =  Decimal(self.total_price) - Decimal(self.bill_discount)
+            self.price_before_tax -= self.total_tax
 
             # Save the updated totals
             self.save(update_fields=[
@@ -142,7 +143,7 @@ class OrderItem(models.Model):
         self.total_tax = Decimal(self.product.tax_amount) * Decimal(self.quantity)
 
         # Calculate price after tax
-        self.price_after_tax = self.total_price + self.total_tax
+        self.price_after_tax = self.total_price
 
         super(OrderItem, self).save(*args, **kwargs)
 
