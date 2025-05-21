@@ -198,8 +198,8 @@ from rest_framework import serializers
 from .models import Product, Brand, Category
 
 class ProductSerializer(serializers.ModelSerializer):
-    category = serializers.PrimaryKeyRelatedField(queryset=Category.objects.all())
-    brand = serializers.PrimaryKeyRelatedField(queryset=Brand.objects.all())
+    category = serializers.StringRelatedField(read_only=True)
+    brand = serializers.StringRelatedField(read_only=True)
     images = ProductImageSerializer(many=True, read_only=True)
     videos = ProductVideoSerializer(many=True, read_only=True)
     attributes = ProductAttributeValueSerializer(many=True, read_only=True)
