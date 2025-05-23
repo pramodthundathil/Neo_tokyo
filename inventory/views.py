@@ -761,10 +761,10 @@ class ProductAttributeValueViewSet(viewsets.ModelViewSet):
         if existing_attribute_value:
             return Response(
                 {
-                    "message": "Product Attribute Value already exists for this product and attribute!",
-                    "existing_data": ProductAttributeValueSerializer(existing_attribute_value).data
+                    "message": "Product Attribute Value already exists for this product and attribute! Value is created",
+                    "data": ProductAttributeValueSerializer(existing_attribute_value).data
                 },
-                status=status.HTTP_400_BAD_REQUEST,
+                status=status.HTTP_201_CREATED,
             )
         
         # Custom response for successful creation
