@@ -747,6 +747,26 @@ class ProductAttributeValueViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated, IsAdmin]
 
     def create(self, request, *args, **kwargs):
+        input_data = request.data
+        product_id = input_data.get("product_id")
+        attribute_id = input_data.get("attribute_id")
+
+
+         # Check if ProductAttributeValue already exists for this product and attribute
+        existing_attribute_value = ProductAttributeValue.objects.filter(
+            product_id=product_id,
+            attribute_id=attribute_id
+        ).first()
+        
+        if existing_attribute_value:
+            return Response(
+                {
+                    "message": "Product Attribute Value already exists for this product and attribute!",
+                    "existing_data": ProductAttributeValueSerializer(existing_attribute_value).data
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
         # Custom response for successful creation
         response = super().create(request, *args, **kwargs)
         input_data = request.data
