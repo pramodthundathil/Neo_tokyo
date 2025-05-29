@@ -645,3 +645,170 @@ class AdminOrderViewSet(viewsets.ModelViewSet):
 ###----------------------------------------------------------------###----------------------------------------------------------------###----------------------------------------------------------------
 ###----------------------------------------------------------------###----------------------------------------------------------------###----------------------------------------------------------------
 ###----------------------------------------------------------------###----------------------------------------------------------------###----------------------------------------------------------------
+##---------------------------------invoice generation --------------------------------------##
+from django.http import HttpResponse
+import pdfkit
+from io import BytesIO
+# Alternative: Generate HTML Invoice (if you prefer HTML over PDF)
+def generate_invoice(request, order_id):
+    """Generate HTML invoice for a specific order"""
+    order = get_object_or_404(Order, id=order_id)
+    
+    html_content = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="UTF-8">
+        <title>Invoice - {order.invoice_number}</title>
+        <style>
+            body {{ font-family: Arial, sans-serif; margin: 0; padding: 20px; }}
+            .header {{ text-align: center; margin-bottom: 30px; }}
+            .invoice-title {{ font-size: 28px; color: #333; margin-bottom: 10px; }}
+            .company-info {{ display: flex; justify-content: space-between; margin-bottom: 30px; }}
+            .billing-info {{ margin-bottom: 30px; }}
+            .section-title {{ font-size: 18px; font-weight: bold; margin-bottom: 10px; color: #333; }}
+            table {{ width: 100%; border-collapse: collapse; margin-bottom: 20px; }}
+            th, td {{ border: 1px solid #ddd; padding: 8px; text-align: left; }}
+            th {{ background-color: #f2f2f2; font-weight: bold; }}
+            .text-right {{ text-align: right; }}
+            .total-row {{ font-weight: bold; background-color: #f9f9f9; }}
+            .final-total {{ font-size: 18px; color: #333; }}
+            .footer {{ margin-top: 30px; text-align: center; font-size: 12px; color: #666; }}
+        </style>
+    </head>
+    <body>
+        <div class="header">
+            <h1 class="invoice-title">INVOICE</h1>
+        </div>
+        
+        <div class="company-info">
+            <div>
+                <strong>Neo Tokyo</strong><br>
+                Floor No.2, Koroth Arcade, Vennala <br>
+                KOchi, Kerala <br>
+                Phone: +91-7920938981<br>
+                Email: support@neotokyo.in
+            </div>
+            <div class="text-right">
+                <strong>Invoice #:</strong> {order.invoice_number}<br>
+                <strong>Date:</strong> {order.created_at.strftime('%d/%m/%Y')}<br>
+                <strong>Order Status:</strong> {order.get_order_status_display()}<br>
+                <strong>Payment Status:</strong> {order.get_payment_status_display()}
+            </div>
+        </div>
+        
+        <div class="billing-info">
+            <div class="section-title">Bill To:</div>
+            <strong>{order.user.first_name} {order.user.last_name}</strong><br>
+            Email: {order.user.email}<br>
+    """
+    
+    # Add delivery address if available
+    if order.delivery_address:
+        html_content += f"""
+            {order.delivery_address.address}<br>
+            {order.delivery_address.district}, {order.delivery_address.state}<br>
+            {order.delivery_address.zip_code}, {order.delivery_address.country}<br>
+        """
+        if order.delivery_address.delivery_person_name:
+            html_content += f"Delivery Person: {order.delivery_address.delivery_person_name}<br>"
+    
+    html_content += """
+        </div>
+        
+        <div class="section-title">Order Details:</div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Item</th>
+                    <th>Quantity</th>
+                    <th>Unit Price</th>
+                    <th>Discount</th>
+                    <th>Tax</th>
+                    <th>Total</th>
+                </tr>
+            </thead>
+            <tbody>
+    """
+    
+    # Add order items
+    for item in order.items.all():
+        html_content += f"""
+                <tr>
+                    <td>{item.product.name}</td>
+                    <td class="text-right">{item.quantity}</td>
+                    <td class="text-right">₹{item.price:.2f}</td>
+                    <td class="text-right">₹{item.product_discount:.2f}</td>
+                    <td class="text-right">₹{item.total_tax:.2f}</td>
+                    <td class="text-right">₹{item.price_after_tax:.2f}</td>
+                </tr>
+        """
+    
+    html_content += f"""
+            </tbody>
+        </table>
+        
+        <table style="width: 50%; margin-left: auto;">
+            <tr>
+                <td><strong>Subtotal (Before Tax):</strong></td>
+                <td class="text-right">₹{order.price_before_tax:.2f}</td>
+            </tr>
+            <tr>
+                <td><strong>Product Discount:</strong></td>
+                <td class="text-right">-₹{order.product_discount:.2f}</td>
+            </tr>
+            <tr>
+                <td><strong>Bill Discount:</strong></td>
+                <td class="text-right">-₹{order.bill_discount:.2f}</td>
+            </tr>
+            <tr>
+                <td><strong>Total Tax:</strong></td>
+                <td class="text-right">₹{order.total_tax:.2f}</td>
+            </tr>
+            <tr class="total-row final-total">
+                <td><strong>TOTAL AMOUNT:</strong></td>
+                <td class="text-right">₹{order.total_price:.2f}</td>
+            </tr>
+        </table>
+    """
+    
+    # Add payment information if available
+    if order.payment_method:
+        html_content += f"""
+        <div style="margin-top: 20px;">
+            <div class="section-title">Payment Information:</div>
+            <strong>Payment Method:</strong> {order.payment_method}<br>
+        """
+        if order.payment_order_id:
+            html_content += f"<strong>Transaction ID:</strong> {order.payment_order_id}<br>"
+        html_content += "</div>"
+    
+    html_content += """
+        <div class="footer">
+            <strong>Thank you for your business!</strong><br>
+            For any queries, please contact us at support@company.com<br>
+            Terms & Conditions: Payment is due within 30 days of invoice date.
+        </div>
+    </body>
+    </html>
+    """
+    # Convert HTML to PDF
+    options = {
+        'page-size': 'A4',
+        'margin-top': '0.75in',
+        'margin-right': '0.75in',
+        'margin-bottom': '0.75in',
+        'margin-left': '0.75in',
+        'encoding': "UTF-8",
+        'no-outline': None,
+        'enable-local-file-access': None
+    }
+    
+    pdf = pdfkit.from_string(html_content, False, options=options)
+    
+    response = HttpResponse(pdf, content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="invoice_{order.invoice_number}.pdf"'
+
+    return response
+
+
