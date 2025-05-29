@@ -440,7 +440,25 @@ def create_cart_order(request):
     except Cart.DoesNotExist:
         return Response({"error": "Cart not found"}, status=status.HTTP_404_NOT_FOUND)
 
-        
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def make_payment_on_failed_transaction(request,order_id):
+
+    order = get_object_or_404(Order, id = order_id)
+
+    data = {
+                "amount": int(order.total_price * 100),
+                "currency": "INR",
+                "payment_capture": "1"
+            }
+
+    raz_order = razorpay_client.order.create(data)
+    order.payment_order_id = raz_order["id"]
+    order.save()
+    
+    return Response({"order_id": order.id, "total_price": order.total_price,"raz_order_id": raz_order["id"], "amount": order.total_price * 100, "key": settings.RAZOR_KEY_ID}, status=status.HTTP_201_CREATED)
+
 
 
 from rest_framework.views import APIView

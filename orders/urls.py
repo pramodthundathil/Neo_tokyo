@@ -18,6 +18,7 @@ urlpatterns = [
     # order
     path('order/single-product/', views.CreateSingleProductOrderView.as_view(), name='create-single-product-order'),
     path('order/cart/', views.create_cart_order, name='create-cart-order'),
+    path("order/make_payment_on_failed_transaction/<int:order_id>/",views.make_payment_on_failed_transaction,name="make_payment_on_failed_transaction"),
     path('payment/callback/', views.PaymentCallbackView.as_view(), name='payment-callback'),
     path('invoice/by_order/<int:order_id>/', views.generate_invoice, name='invoice_order'),
 ]
