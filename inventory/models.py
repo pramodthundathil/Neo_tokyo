@@ -208,7 +208,7 @@ class ProductVariant(models.Model):
     relationship_value = models.CharField(max_length=20)
 
     def __str__(self):
-        return f"{self.product} -> {self.variant_product} ({self.relationship_value})"
+        return f"{self.variant_product.name}"
     
 
 
