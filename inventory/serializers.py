@@ -143,7 +143,7 @@ class ProductVariantSerializer(serializers.ModelSerializer):
     )
     variant_product = serializers.StringRelatedField(read_only=True)
     variant_product_id = serializers.PrimaryKeyRelatedField(
-        queryset=Product.objects.all(), source='variant_product', write_only=True
+        queryset=Product.objects.all(), source='variant_product'
     )
     relationship = VariantRelationshipAttributeSerializer(read_only=True)
     relationship_id = serializers.PrimaryKeyRelatedField(
