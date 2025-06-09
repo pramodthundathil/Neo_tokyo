@@ -50,7 +50,7 @@ class CustomerAnalytics(models.Model):
             # Most used payment method (placeholder - update based on your payment data)
             payment_methods = completed_orders.values('payment_order_id').annotate(count=Count('id')).order_by('-count')
             if payment_methods.exists():
-                analytics.preferred_payment_method = payment_methods.first()['payment_order_id']
+                analytics.preferred_payment_method = payment_methods.first()['payment_method']
         
         analytics.save()
         return analytics
