@@ -306,12 +306,12 @@ class OrderTimingAnalyticsView(APIView):
 
 class DashboardSummaryView(APIView):
     """
-    API endpoint for dashboard summary
+    Enhanced API endpoint for dashboard summary with comprehensive metrics and charts
     """
     permission_classes = [IsAdmin, permissions.IsAuthenticated]
     
     def get(self, request):
-        """Get dashboard summary data"""
+        """Get comprehensive dashboard summary data"""
         today = timezone.now().date()
         thirty_days_ago = today - timedelta(days=30)
         previous_thirty_days = thirty_days_ago - timedelta(days=30)
@@ -333,6 +333,7 @@ class DashboardSummaryView(APIView):
         )
         previous_revenue = previous_orders.aggregate(total=Sum('total_price'))['total'] or 0
         previous_orders_count = previous_orders.count()
+        previous_avg_order = previous_revenue / previous_orders_count if previous_orders_count else 0
         
         # Previous period new customers
         previous_new_customers = CustomUser.objects.filter(
@@ -341,24 +342,27 @@ class DashboardSummaryView(APIView):
         ).count()
         
         # Calculate percentage changes
-        revenue_change = ((current_revenue - previous_revenue) / previous_revenue * 100) if previous_revenue else None
-        orders_change = ((current_orders_count - previous_orders_count) / previous_orders_count * 100) if previous_orders_count else None
-        customers_change = ((new_customers - previous_new_customers) / previous_new_customers * 100) if previous_new_customers else None
+        revenue_change = self.calculate_percentage_change(current_revenue, previous_revenue)
+        orders_change = self.calculate_percentage_change(current_orders_count, previous_orders_count)
+        customers_change = self.calculate_percentage_change(new_customers, previous_new_customers)
+        avg_order_change = self.calculate_percentage_change(current_avg_order, previous_avg_order)
         
-        # Daily revenue for chart
+        # Daily revenue for chart (last 30 days)
         daily_revenue = Order.objects.filter(
             created_at__date__gte=thirty_days_ago,
             order_status='PAID'
         ).annotate(
             date=TruncDate('created_at')
         ).values('date').annotate(
-            revenue=Sum('total_price')
+            revenue=Sum('total_price'),
+            orders_count=Count('id')
         ).order_by('date')
         
         chart_data = [
             {
                 'date': item['date'].strftime('%Y-%m-%d'),
-                'revenue': float(item['revenue'])
+                'revenue': float(item['revenue']),
+                'orders_count': item['orders_count']
             }
             for item in daily_revenue
         ]
@@ -382,17 +386,224 @@ class DashboardSummaryView(APIView):
             for item in top_products
         ]
         
+        # Sales by Category
+        category_sales = OrderItem.objects.filter(
+            order__created_at__date__gte=thirty_days_ago,
+            order__order_status='PAID'
+        ).values('product__category__name').annotate(
+            total_revenue=Sum(F('price') * F('quantity')),
+            total_orders=Count('order', distinct=True),
+            total_quantity=Sum('quantity')
+        ).order_by('-total_revenue')
+        
+        category_chart_data = [
+            {
+                'category': item['product__category__name'] or 'Uncategorized',
+                'revenue': float(item['total_revenue']),
+                'orders': item['total_orders'],
+                'quantity': item['total_quantity']
+            }
+            for item in category_sales
+        ]
+        
+        # Sales by Sub Category
+        subcategory_sales = OrderItem.objects.filter(
+            order__created_at__date__gte=thirty_days_ago,
+            order__order_status='PAID'
+        ).values('product__subcategory__name').annotate(
+            total_revenue=Sum(F('price') * F('quantity')),
+            total_orders=Count('order', distinct=True),
+            total_quantity=Sum('quantity')
+        ).order_by('-total_revenue')[:10]  # Top 10 subcategories
+        
+        subcategory_chart_data = [
+            {
+                'subcategory': item['product__subcategory__name'] or 'No Subcategory',
+                'revenue': float(item['total_revenue']),
+                'orders': item['total_orders'],
+                'quantity': item['total_quantity']
+            }
+            for item in subcategory_sales
+        ]
+        
+        # Sales by Brand
+        brand_sales = OrderItem.objects.filter(
+            order__created_at__date__gte=thirty_days_ago,
+            order__order_status='PAID'
+        ).values('product__brand__name').annotate(
+            total_revenue=Sum(F('price') * F('quantity')),
+            total_orders=Count('order', distinct=True),
+            total_quantity=Sum('quantity')
+        ).order_by('-total_revenue')[:10]  # Top 10 brands
+        
+        brand_chart_data = [
+            {
+                'brand': item['product__brand__name'] or 'No Brand',
+                'revenue': float(item['total_revenue']),
+                'orders': item['total_orders'],
+                'quantity': item['total_quantity']
+            }
+            for item in brand_sales
+        ]
+        
+        # Order Status Distribution
+        order_status_data = Order.objects.filter(
+            created_at__date__gte=thirty_days_ago
+        ).values('order_status').annotate(
+            count=Count('id'),
+            total_value=Sum('total_price')
+        ).order_by('order_status')
+        
+        order_status_chart = [
+            {
+                'status': item['order_status'],
+                'count': item['count'],
+                'total_value': float(item['total_value']) if item['total_value'] else 0
+            }
+            for item in order_status_data
+        ]
+        
+        # Payment Status Distribution
+        payment_status_data = Order.objects.filter(
+            created_at__date__gte=thirty_days_ago
+        ).values('payment_status').annotate(
+            count=Count('id'),
+            total_value=Sum('total_price')
+        ).order_by('payment_status')
+        
+        payment_status_chart = [
+            {
+                'status': item['payment_status'],
+                'count': item['count'],
+                'total_value': float(item['total_value']) if item['total_value'] else 0
+            }
+            for item in payment_status_data
+        ]
+        
+        # Delivery Status Distribution
+        delivery_status_data = Order.objects.filter(
+            created_at__date__gte=thirty_days_ago
+        ).values('delivery_status').annotate(
+            count=Count('id'),
+            total_value=Sum('total_price')
+        ).order_by('delivery_status')
+        
+        delivery_status_chart = [
+            {
+                'status': item['delivery_status'],
+                'count': item['count'],
+                'total_value': float(item['total_value']) if item['total_value'] else 0
+            }
+            for item in delivery_status_data
+        ]
+        
+        # Customer Growth Trend (last 30 days)
+        customer_growth = CustomUser.objects.filter(
+            date_joined__date__gte=thirty_days_ago
+        ).annotate(
+            date=TruncDate('date_joined')
+        ).values('date').annotate(
+            new_customers=Count('id')
+        ).order_by('date')
+        
+        customer_growth_chart = [
+            {
+                'date': item['date'].strftime('%Y-%m-%d'),
+                'new_customers': item['new_customers']
+            }
+            for item in customer_growth
+        ]
+        
+        # Additional Metrics
+        total_customers = CustomUser.objects.count()
+        active_products = Product.objects.filter(is_available=True).count()
+        low_stock_products = Product.objects.filter(stock__lte=10, is_available=True).count()
+        
+        # Revenue by payment method
+        payment_method_revenue = Order.objects.filter(
+            created_at__date__gte=thirty_days_ago,
+            order_status='PAID'
+        ).values('payment_method').annotate(
+            total_revenue=Sum('total_price'),
+            order_count=Count('id')
+        ).order_by('-total_revenue')
+        
+        payment_method_chart = [
+            {
+                'payment_method': item['payment_method'] or 'Unknown',
+                'revenue': float(item['total_revenue']),
+                'order_count': item['order_count']
+            }
+            for item in payment_method_revenue
+        ]
+        
         summary = {
             'period_days': 30,
-            'revenue': float(current_revenue),
-            'revenue_change': float(revenue_change) if revenue_change is not None else None,
-            'orders_count': current_orders_count,
-            'orders_change': float(orders_change) if orders_change is not None else None,
-            'average_order_value': float(current_avg_order),
-            'new_customers': new_customers,
-            'customers_change': float(customers_change) if customers_change is not None else None,
-            'chart_data': chart_data,
+            'current_period': {
+                'start_date': thirty_days_ago.strftime('%Y-%m-%d'),
+                'end_date': today.strftime('%Y-%m-%d')
+            },
+            'previous_period': {
+                'start_date': previous_thirty_days.strftime('%Y-%m-%d'),
+                'end_date': thirty_days_ago.strftime('%Y-%m-%d')
+            },
+            
+            # Main Metrics with Comparisons
+            'metrics': {
+                'revenue': {
+                    'current': float(current_revenue),
+                    'previous': float(previous_revenue),
+                    'change_percentage': revenue_change,
+                    'trend': 'up' if revenue_change > 0 else 'down' if revenue_change < 0 else 'stable'
+                },
+                'orders': {
+                    'current': current_orders_count,
+                    'previous': previous_orders_count,
+                    'change_percentage': orders_change,
+                    'trend': 'up' if orders_change > 0 else 'down' if orders_change < 0 else 'stable'
+                },
+                'average_order_value': {
+                    'current': float(current_avg_order),
+                    'previous': float(previous_avg_order),
+                    'change_percentage': avg_order_change,
+                    'trend': 'up' if avg_order_change > 0 else 'down' if avg_order_change < 0 else 'stable'
+                },
+                'new_customers': {
+                    'current': new_customers,
+                    'previous': previous_new_customers,
+                    'change_percentage': customers_change,
+                    'trend': 'up' if customers_change > 0 else 'down' if customers_change < 0 else 'stable'
+                }
+            },
+            
+            # Additional Stats
+            'additional_stats': {
+                'total_customers': total_customers,
+                'active_products': active_products,
+                'low_stock_products': low_stock_products
+            },
+            
+            # Chart Data
+            'charts': {
+                'daily_revenue': chart_data,
+                'customer_growth': customer_growth_chart,
+                'category_sales': category_chart_data,
+                'subcategory_sales': subcategory_chart_data,
+                'brand_sales': brand_chart_data,
+                'order_status': order_status_chart,
+                'payment_status': payment_status_chart,
+                'delivery_status': delivery_status_chart,
+                'payment_method_revenue': payment_method_chart
+            },
+            
+            # Top Lists
             'top_products': top_products_data
         }
         
         return Response(summary)
+    
+    def calculate_percentage_change(self, current, previous):
+        """Helper method to calculate percentage change"""
+        if previous == 0:
+            return 100.0 if current > 0 else 0.0
+        return round(((current - previous) / previous) * 100, 2)
