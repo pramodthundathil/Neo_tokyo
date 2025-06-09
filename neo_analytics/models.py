@@ -48,7 +48,7 @@ class CustomerAnalytics(models.Model):
             analytics.is_active = analytics.last_purchase_date > (timezone.now() - timedelta(days=90)) if analytics.last_purchase_date else False
             
             # Most used payment method (placeholder - update based on your payment data)
-            payment_methods = completed_orders.values('payment_order_id').annotate(count=Count('id')).order_by('-count')
+            payment_methods = completed_orders.values('payment_method').annotate(count=Count('id')).order_by('-count')
             if payment_methods.exists():
                 analytics.preferred_payment_method = payment_methods.first()['payment_method']
         
