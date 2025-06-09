@@ -627,7 +627,7 @@ class AdminOrderViewSet(viewsets.ModelViewSet):
         if delivery_status:
             order.delivery_status = delivery_status
         
-        order.save(update_fields=['order_status', 'payment_status'])
+        order.save(update_fields=['order_status', 'payment_status',"delivery_status"])
         
         serializer = self.get_serializer(order)
         return Response(serializer.data)
