@@ -616,12 +616,16 @@ class AdminOrderViewSet(viewsets.ModelViewSet):
         # Get status from request
         order_status = request.data.get('order_status')
         payment_status = request.data.get('payment_status')
+        delivery_status = request.data.get("delivery_status")
         
         if order_status:
             order.order_status = order_status
         
         if payment_status:
             order.payment_status = payment_status
+        
+        if delivery_status:
+            order.delivery_status = delivery_status
         
         order.save(update_fields=['order_status', 'payment_status'])
         
