@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import CustomUser
+from .models import CustomUser, Nvidia_image
 
 class CustomUserSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
@@ -76,3 +76,29 @@ class DeliveryAddressSerializer(serializers.ModelSerializer):
             DeliveryAddress.objects.filter(user=instance.user, is_primary=True).exclude(id=instance.id).update(is_primary=False)
         
         return super().update(instance, validated_data)
+
+
+
+# nvidia serializer
+# 
+class NvidiaImageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Nvidia_image
+        fields = ['id', 'name_of_image', 'image', 'link', 'is_featured', 'date_added']
+        read_only_fields = ['id', 'date_added']
+
+    def update(self, instance, validated_data):
+        # Handle featured status update
+        if 'is_featured' in validated_data and validated_data['is_featured']:
+            # Remove featured status from all other images
+            Nvidia_image.objects.exclude(id=instance.id).update(is_featured=False)
+        
+        return super().update(instance, validated_data)
+
+    def create(self, validated_data):
+        # Handle featured status during creation
+        if validated_data.get('is_featured', False):
+            # Remove featured status from all existing images
+            Nvidia_image.objects.filter(is_featured=True).update(is_featured=False)
+        
+        return super().create(validated_data)

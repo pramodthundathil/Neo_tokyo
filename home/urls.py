@@ -35,5 +35,6 @@ urlpatterns = [
 ]
 
 router.register(r'delivery-addresses', views.DeliveryAddressViewSet, basename='delivery-address')
+router.register(r'nvidia-images', views.NvidiaImageViewSet, basename='nvidia-images')
 urlpatterns +=router.urls
 

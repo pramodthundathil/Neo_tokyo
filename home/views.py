@@ -836,3 +836,101 @@ class DeliveryAddressViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
     
 
+
+    # nvidia Backend 
+
+from .models import Nvidia_image
+from .serializers import NvidiaImageSerializer
+from django.db import transaction
+
+
+class NvidiaImageViewSet(viewsets.ModelViewSet):
+    queryset = Nvidia_image.objects.all().order_by('-date_added')
+    serializer_class = NvidiaImageSerializer
+
+    def get_permissions(self):
+        """
+        Only allow read access to all users, admin required for modifications
+        """
+        if self.action in ['list', 'retrieve', 'featured']:
+            permission_classes = [AllowAny]
+        else:
+            permission_classes = [IsAuthenticated,IsAdmin]
+        return [permission() for permission in permission_classes]
+
+    @transaction.atomic
+    def create(self, request, *args, **kwargs):
+        """
+        Create a new image with single featured image logic
+        """
+        return super().create(request, *args, **kwargs)
+
+    @transaction.atomic
+    def update(self, request, *args, **kwargs):
+        """
+        Update an image with single featured image logic
+        """
+        return super().update(request, *args, **kwargs)
+
+    @transaction.atomic
+    def partial_update(self, request, *args, **kwargs):
+        """
+        Partial update an image with single featured image logic
+        """
+        return super().partial_update(request, *args, **kwargs)
+
+    @action(detail=False, methods=['get'], permission_classes=[AllowAny])
+    def featured(self, request):
+        """
+        Return the single featured nvidia image
+        """
+        try:
+            featured_image = Nvidia_image.objects.get(is_featured=True)
+            serializer = self.get_serializer(featured_image)
+            return Response(serializer.data)
+        except Nvidia_image.DoesNotExist:
+            return Response(
+                {"detail": "No featured image found."}, 
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except Nvidia_image.MultipleObjectsReturned:
+            # Fallback: if somehow multiple featured images exist, return the most recent
+            featured_image = Nvidia_image.objects.filter(is_featured=True).order_by('-date_added').first()
+            serializer = self.get_serializer(featured_image)
+            return Response(serializer.data)
+
+    @action(detail=True, methods=['post'], permission_classes=[IsAdmin])
+    def set_featured(self, request, pk=None):
+        """
+        Set a specific image as featured (removes featured status from all others)
+        """
+        image = self.get_object()
+        
+        with transaction.atomic():
+            # Remove featured status from all images
+            Nvidia_image.objects.filter(is_featured=True).update(is_featured=False)
+            # Set this image as featured
+            image.is_featured = True
+            image.save()
+        
+        return Response(
+            {"detail": f"Image '{image.name_of_image or image.id}' is now featured."},
+            status=status.HTTP_200_OK
+        )
+
+    @action(detail=True, methods=['post'], permission_classes=[IsAdmin])
+    def remove_featured(self, request, pk=None):
+        """
+        Remove featured status from a specific image
+        """
+        image = self.get_object()
+        image.is_featured = False
+        image.save()
+        
+        return Response(
+            {"detail": f"Featured status removed from image '{image.name_of_image or image.id}'."},
+            status=status.HTTP_200_OK
+        )
+
+
+

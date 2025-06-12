@@ -99,3 +99,28 @@ class DeliveryAddress(models.Model):
 
     def __str__(self):
         return f"{(self.user.first_name)} - Delivery Address {self.delivery_person_name}"
+    
+
+
+class Nvidia_image(models.Model):
+    name_of_image = models.CharField(max_length=20, null=True, blank=True)
+    image = models.FileField(upload_to='nvidia_image')
+    link = models.URLField(null=True, blank=True)
+    is_featured = models.BooleanField(default=False)
+    date_added = models.DateField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Nvidia Image on - {str(self.date_added)}"
+
+    def save(self, *args, **kwargs):
+        # If this image is being set as featured, remove featured status from all others
+        if self.is_featured:
+            Nvidia_image.objects.filter(is_featured=True).update(is_featured=False)
+        super().save(*args, **kwargs)
+
+    class Meta:
+        verbose_name = "Nvidia Image"
+        verbose_name_plural = "Nvidia Images"
+
+    
+
