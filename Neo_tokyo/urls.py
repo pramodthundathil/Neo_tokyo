@@ -28,6 +28,7 @@ urlpatterns = [
     path('orders/', include('orders.urls')),
     path('interactions/', include('interactions.urls')),
     path('analytics/', include('neo_analytics.urls')),
+    path('advertisement/', include('advertisement.urls')),
 
     # Swagger URLs
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),

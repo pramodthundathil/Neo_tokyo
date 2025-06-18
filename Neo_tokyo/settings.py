@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     "orders",
     'interactions',
     'neo_analytics',
+    'advertisement',
 ]
 
 MIDDLEWARE = [
