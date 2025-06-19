@@ -104,7 +104,7 @@ class HeroCarouselViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.action == 'list':
             return [permissions.AllowAny()]
-        return [IsAdmin]
+        return [IsAdmin()]
     
     def get_queryset(self):
         queryset = HeroCarousel.objects.filter(is_active=True)
