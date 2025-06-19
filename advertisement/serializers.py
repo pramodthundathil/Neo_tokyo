@@ -28,7 +28,7 @@ class ProductDropDownCategoryListSerializer(serializers.ModelSerializer):
     """Lightweight serializer for listing categories"""
     class Meta:
         model = ProductDropDownCategory
-        fields = ['id', 'name', 'slug', 'description', 'order']
+        fields = ['id', 'name', 'slug', 'is_active','description', 'order']
 
 class ProductDropDownCategoryDetailSerializer(serializers.ModelSerializer):
     """Complete serializer with all related data"""
