@@ -42,8 +42,8 @@ class ProductDropDownCategoryViewSet(viewsets.ModelViewSet):
         if self.action == 'retrieve':
             # Optimize queries with prefetch_related for detail view
             return ProductDropDownCategory.objects.filter(is_active=True).prefetch_related(
-                Prefetch('hero_carousels', queryset=HeroCarousel.objects.filter(is_active=True)),
-                Prefetch('specifications', queryset=ProductSpecificationDescription.objects.filter(is_active=True)),
+                Prefetch('hero_carousels', queryset=HeroCarousel.objects.all()),
+                Prefetch('specifications', queryset=ProductSpecificationDescription.objects.all()),
                 Prefetch('category_products', queryset=ProductListOnProduct.objects.select_related('product')),
             )
         return ProductDropDownCategory.objects.filter(is_active=True)
@@ -56,8 +56,8 @@ class ProductDropDownCategoryViewSet(viewsets.ModelViewSet):
         """
         try:
             category = ProductDropDownCategory.objects.prefetch_related(
-                Prefetch('hero_carousels', queryset=HeroCarousel.objects.filter(is_active=True)),
-                Prefetch('specifications', queryset=ProductSpecificationDescription.objects.filter(is_active=True)),
+                Prefetch('hero_carousels', queryset=HeroCarousel.objects.all()),
+                Prefetch('specifications', queryset=ProductSpecificationDescription.objects.all()),
                 Prefetch('category_products', queryset=ProductListOnProduct.objects.select_related('product__brand')),
             ).get(slug=slug, is_active=True)
             
@@ -94,7 +94,7 @@ class HeroCarouselViewSet(viewsets.ModelViewSet):
     """
     ViewSet for managing hero carousel items
     """
-    queryset = HeroCarousel.objects.filter(is_active=True)
+    queryset = HeroCarousel.objects.all()
     
     def get_serializer_class(self):
         if self.action in ['create', 'update', 'partial_update']:
