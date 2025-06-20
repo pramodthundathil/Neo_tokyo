@@ -107,7 +107,7 @@ class HeroCarouselViewSet(viewsets.ModelViewSet):
         return [IsAdmin()]
     
     def get_queryset(self):
-        queryset = HeroCarousel.objects.filter(is_active=True)
+        queryset = HeroCarousel.objects.all()
         category_slug = self.request.query_params.get('category', None)
         
         if category_slug:
@@ -122,7 +122,7 @@ class ProductSpecificationViewSet(viewsets.ModelViewSet):
     """
     ViewSet for managing product specifications
     """
-    queryset = ProductSpecificationDescription.objects.filter(is_active=True)
+    queryset = ProductSpecificationDescription.objects.all()
     
     def get_serializer_class(self):
         if self.action in ['create', 'update', 'partial_update']:
@@ -135,7 +135,7 @@ class ProductSpecificationViewSet(viewsets.ModelViewSet):
         return [IsAdmin()]
     
     def get_queryset(self):
-        queryset = ProductSpecificationDescription.objects.filter(is_active=True)
+        queryset = ProductSpecificationDescription.objects.all()
         category_slug = self.request.query_params.get('category', None)
         
         if category_slug:
