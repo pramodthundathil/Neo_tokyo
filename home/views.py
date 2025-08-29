@@ -385,8 +385,21 @@ def generate_and_send_otp(identifier):
         # In a real implementation, integrate with an SMS gateway
         # This is just a placeholder for the SMS sending functionality
         try:
-            # Example: sms_service.send(identifier, f"Your OTP for registration is: {otp}")
-            # Since we can't actually send SMS in this example, we'll just log it
+            sms_service = SMSService(
+            
+            access_token="WT8X0A685134IC2",
+            access_token_key="=5,BYKFea*[7MUnmbIh&_kfATzdoD;G8"
+            )
+        
+            sms_result = sms_service.send_sms(
+                recipients=[identifier],
+                message_content=f'Dear Customer, OTP for NEO TOKYO account registration is {otp}. otp is vaild only 10 minutes.',
+                sms_header="NEOTOK",
+                entity_id="1701175222455815989",
+                template_id="1707175609894607020",
+            )
+
+            print("SMS Response:", sms_result)
             print(f"SMS OTP {otp} would be sent to {identifier}")
             return True, "OTP sent to your phone number successfully."
         except Exception as e:
