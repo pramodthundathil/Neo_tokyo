@@ -256,3 +256,6 @@ GOOGLE_CLIENT_ID = "752728323430-85geretfsn5f7ino654hcqolnrm955c3.apps.googleuse
 
 RAZOR_KEY_ID = "rzp_test_9tCOZuKLhiZdaM"
 RAZOR_KEY_SECRET = "IfMivqkfXWvuJi2IR10W4bzN"
+
+sms_access_token="WT8X0A685134IC2",   # put in settings.py instead of hardcoding
+sms_access_token_key="=5,BYKFea*[7MUnmbIh&_kfATzdoD;G8"

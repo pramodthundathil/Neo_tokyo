@@ -219,7 +219,9 @@ def google_callback(request):
         })
     except Exception as e:
         return Response({'error': str(e)}, status=400)
-
+    
+from .sms_service import SMSService
+from django.conf import settings
 # OTP Generation
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -253,17 +255,33 @@ def generate_otp(request):
     # Simulate sending OTP 
     print(f"OTP for {identifier}: {otp}")
     email = user.email
-    current_site = get_current_site(request)
-    mail_subject = 'OTP for Account LOGIN -  NEO TOKYO'
-    path = "SignUp"
-    message = render_to_string('emailbody_otp.html', {'user': user,
-                                                        'domain': current_site.domain,
-                                                        'path':path,
-                                                        'token':otp,})
+    phone = user.phone_number
+    if phone:
+        sms_service = SMSService(
+            access_token= settings.sms_access_token,   # put in settings.py instead of hardcoding
+            access_token_key=settings.sms_access_token_key
+        )
+        sms_result = sms_service.send_sms(
+            recipients=[phone],
+            message_content=f'Dear Customer, Your OTP for Neo Tokyo account login is {otp}. Please use this OTP within 10 minutes to access your account.',
+            sms_header="NEOTOK",
+            entity_id="1701175222455815989",
+            template_id="1707175430049563666",
+        )
+        print("SMS Response:", sms_result)
 
-    email = EmailMessage(mail_subject, message, to=[email])
-    email.content_subtype = "html"
-    email.send(fail_silently=True)
+    if email:
+        current_site = get_current_site(request)
+        mail_subject = 'OTP for Account LOGIN -  NEO TOKYO'
+        path = "SignUp"
+        message = render_to_string('emailbody_otp.html', {'user': user,
+                                                            'domain': current_site.domain,
+                                                            'path':path,
+                                                            'token':otp,})
+
+        email = EmailMessage(mail_subject, message, to=[email])
+        email.content_subtype = "html"
+        email.send(fail_silently=True)
 
     return Response(
         {'message': 'OTP sent successfully.'},
