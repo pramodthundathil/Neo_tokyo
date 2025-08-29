@@ -258,9 +258,11 @@ def generate_otp(request):
     phone = user.phone_number
     if phone:
         sms_service = SMSService(
-            access_token= settings.sms_access_token,   # put in settings.py instead of hardcoding
-            access_token_key=settings.sms_access_token_key
-        )
+            
+            access_token="WT8X0A685134IC2",
+            access_token_key="=5,BYKFea*[7MUnmbIh&_kfATzdoD;G8"
+            )
+        
         sms_result = sms_service.send_sms(
             recipients=[phone],
             message_content=f'Dear Customer, Your OTP for Neo Tokyo account login is {otp}. Please use this OTP within 10 minutes to access your account.',

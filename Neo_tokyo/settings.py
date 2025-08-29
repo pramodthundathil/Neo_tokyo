@@ -235,6 +235,9 @@ MEDIA_ROOT = os.path.join(BASE_DIR,"media")
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
 
+SMS_ACCESS_TOKEN="WT8X0A685134IC2",   # put in settings.py instead of hardcoding
+SMS_ACCESS_TOKEN_KEY="=5,BYKFea*[7MUnmbIh&_kfATzdoD;G8"
+
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
@@ -257,5 +260,3 @@ GOOGLE_CLIENT_ID = "752728323430-85geretfsn5f7ino654hcqolnrm955c3.apps.googleuse
 RAZOR_KEY_ID = "rzp_test_9tCOZuKLhiZdaM"
 RAZOR_KEY_SECRET = "IfMivqkfXWvuJi2IR10W4bzN"
 
-sms_access_token="WT8X0A685134IC2",   # put in settings.py instead of hardcoding
-sms_access_token_key="=5,BYKFea*[7MUnmbIh&_kfATzdoD;G8"
